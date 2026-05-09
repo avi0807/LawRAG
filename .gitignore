@@ -1,0 +1,42 @@
+# Virtual environment
+graphrag/
+venv/
+env/
+.env
+
+# Cache files
+data/arxiv_cache/
+data/qdrant_storage/
+data/kg_cache.pkl
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Model cache (downloaded by sentence-transformers / flashrank)
+.cache/
+models/
+
+# Distribution
+dist/
+build/
+*.egg-info/

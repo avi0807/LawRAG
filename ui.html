@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ResearchMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0c0c0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --danger: #f87171;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-text span { color: var(--accent2); font-style: italic; }
+
+  .stats-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .stat-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .stat-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .stat-dot.amber { background: var(--amber); }
+
+  /* ── Main layout ── */
+  main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Chat area ── */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 40px;
+  }
+
+  .empty-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 42px;
+    text-align: center;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+
+  .empty-title em { color: var(--accent2); font-style: italic; }
+
+  .empty-subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.6;
+  }
+
+  .suggestions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .suggestion {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+    transition: all 0.15s;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  .suggestion:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--surface2);
+  }
+
+  .suggestion strong {
+    display: block;
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  /* ── Messages ── */
+  .message {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { align-items: flex-end; }
+  .message.assistant { align-items: flex-start; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .user .bubble {
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .assistant .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    white-space: pre-wrap;
+  }
+
+  /* ── Metadata chips ── */
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 78%;
+  }
+
+  .chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface2);
+  }
+
+  .chip.confidence { border-color: var(--green); color: var(--green); }
+  .chip.strategy   { border-color: var(--accent); color: var(--accent2); }
+  .chip.source     { border-color: var(--border); }
+
+  /* ── Thinking indicator ── */
+  .thinking {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 78%;
+  }
+
+  .thinking-dots {
+    display: flex; gap: 4px;
+  }
+
+  .thinking-dots span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s ease infinite;
+  }
+
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  .thinking-stage {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  /* ── Input area ── */
+  .input-area {
+    padding: 20px 28px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .input-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 10px 10px 18px;
+    transition: border-color 0.15s;
+  }
+
+  .input-wrap:focus-within { border-color: var(--accent); }
+
+  textarea {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    resize: none;
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: white;
+  }
+
+  .send-btn:hover { background: var(--accent2); transform: scale(1.05); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .sidebar-section { display: flex; flex-direction: column; gap: 8px; }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-card .value {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent2);
+  }
+
+  .stat-card .label {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .error-msg {
+    background: #2d1515;
+    border: 1px solid var(--danger);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--danger);
+    max-width: 78%;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧠</div>
+    <div class="logo-text">Research<span>Mind</span></div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-dot" id="status-dot"></div>
+      <span id="status-text">Connecting...</span>
+    </div>
+    <div class="stat">📄 <span id="header-docs">—</span> papers</div>
+    <div class="stat">🔷 <span id="header-vectors">—</span> vectors</div>
+    <div class="stat">🕸️ <span id="header-nodes">—</span> nodes</div>
+  </div>
+</header>
+
+<main>
+  <div class="chat-area">
+
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-title">Ask anything about<br/><em>RAG research</em></div>
+        <div class="empty-subtitle">
+          Powered by vector search + knowledge graph reasoning over 15 ArXiv papers.
+          Try a question below or type your own.
+        </div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="What is retrieval augmented generation and how does it work?">
+            <strong>📚 Foundations</strong>
+            What is retrieval augmented generation?
+          </div>
+          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="What are the main challenges and limitations of RAG systems?">
+            <strong>⚠️ Challenges</strong>
+            Main limitations of RAG systems?
+          </div>
+          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="How is RAG evaluated? What metrics are used?">
+            <strong>📊 Evaluation</strong>
+            How is RAG performance evaluated?
+          </div>
+          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="What are the latest improvements to retrieval methods in RAG?">
+            <strong>🚀 Advances</strong>
+            Latest improvements in RAG retrieval?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea
+          id="input"
+          placeholder="Ask a question about RAG research..."
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">System</div>
+      <div class="status-indicator">
+        <div class="stat-dot" id="sidebar-dot"></div>
+        <span id="sidebar-status">Loading...</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Knowledge Base</div>
+      <div class="stat-card">
+        <div class="value" id="stat-docs">—</div>
+        <div class="label">Papers ingested</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="stat-vectors">—</div>
+        <div class="label">Vectors stored</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="stat-nodes">—</div>
+        <div class="label">Graph nodes</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="stat-edges">—</div>
+        <div class="label">Graph edges</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Stack</div>
+      <div style="font-size:12px;color:var(--muted);line-height:2;font-family:'DM Mono',monospace;">
+        LLM: qwen3:4b<br/>
+        Embed: nomic-embed<br/>
+        VectorDB: Qdrant<br/>
+        Graph: NetworkX<br/>
+        Agents: LangGraph<br/>
+        Reranker: FlashRank
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const API = "http://localhost:8000";
+let isLoading = false;
+
+// ── Poll health endpoint ────────────────────────────────────
+async function checkHealth() {
+  try {
+    const res = await fetch(`${API}/health`);
+    const data = await res.json();
+
+    const ready = data.status === "ready";
+    const dot = document.getElementById("status-dot");
+    const txt = document.getElementById("status-text");
+    const sdot = document.getElementById("sidebar-dot");
+    const stxt = document.getElementById("sidebar-status");
+
+    dot.className = `stat-dot ${ready ? "green" : "amber"}`;
+    sdot.className = `stat-dot ${ready ? "green" : "amber"}`;
+    txt.textContent = ready ? "Ready" : "Loading pipeline...";
+    stxt.textContent = ready ? "Ready" : "Building index...";
+
+    document.getElementById("header-docs").textContent = data.documents;
+    document.getElementById("header-vectors").textContent = data.vectors;
+    document.getElementById("header-nodes").textContent = data.graph_nodes;
+    document.getElementById("stat-docs").textContent = data.documents;
+    document.getElementById("stat-vectors").textContent = data.vectors;
+    document.getElementById("stat-nodes").textContent = data.graph_nodes;
+    document.getElementById("stat-edges").textContent = data.graph_edges;
+
+    if (!ready) setTimeout(checkHealth, 2000);
+  } catch (e) {
+    document.getElementById("status-dot").className = "stat-dot";
+    document.getElementById("status-text").textContent = "Offline";
+    document.getElementById("sidebar-dot").className = "stat-dot";
+    document.getElementById("sidebar-status").textContent = "API offline";
+    setTimeout(checkHealth, 3000);
+  }
+}
+
+// ── Auto resize textarea ────────────────────────────────────
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+// ── Keyboard handler ────────────────────────────────────────
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+// ── Suggestion click ────────────────────────────────────────
+function ask(q) {
+  document.getElementById("input").value = q;
+  sendMessage();
+}
+
+// ── Add message to DOM ──────────────────────────────────────
+function addMessage(role, content, meta = null) {
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.remove();
+
+  const container = document.getElementById("messages");
+
+  const msg = document.createElement("div");
+  msg.className = `message ${role}`;
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = content;
+  msg.appendChild(bubble);
+
+  if (meta) {
+    const metaDiv = document.createElement("div");
+    metaDiv.className = "meta";
+
+    if (meta.confidence !== undefined) {
+      const c = document.createElement("div");
+      c.className = "chip confidence";
+      c.textContent = `confidence: ${(meta.confidence * 100).toFixed(0)}%`;
+      metaDiv.appendChild(c);
+    }
+
+    if (meta.strategy) {
+      const s = document.createElement("div");
+      s.className = "chip strategy";
+      s.textContent = `strategy: ${meta.strategy}`;
+      metaDiv.appendChild(s);
+    }
+
+    if (meta.sources) {
+      meta.sources.slice(0, 3).forEach(src => {
+        const d = document.createElement("div");
+        d.className = "chip source";
+        d.textContent = src.length > 40 ? src.slice(0, 40) + "…" : src;
+        metaDiv.appendChild(d);
+      });
+    }
+
+    msg.appendChild(metaDiv);
+  }
+
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+  return msg;
+}
+
+// ── Add thinking indicator ──────────────────────────────────
+function addThinking() {
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.remove();
+
+  const container = document.getElementById("messages");
+  const msg = document.createElement("div");
+  msg.className = "message assistant";
+  msg.id = "thinking";
+
+  const stages = ["Orchestrating agents...", "Retrieving chunks...", "Evaluating evidence...", "Generating answer..."];
+  let i = 0;
+
+  msg.innerHTML = `
+    <div class="thinking">
+      <div class="thinking-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="thinking-stage" id="thinking-stage">${stages[0]}</span>
+    </div>`;
+
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+
+  const interval = setInterval(() => {
+    i = (i + 1) % stages.length;
+    const el = document.getElementById("thinking-stage");
+    if (el) el.textContent = stages[i];
+  }, 1800);
+
+  return { el: msg, clear: () => clearInterval(interval) };
+}
+
+// ── Send message ────────────────────────────────────────────
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById("input");
+  const question = input.value.trim();
+  if (!question) return;
+
+  isLoading = true;
+  input.value = "";
+  input.style.height = "auto";
+  document.getElementById("send-btn").disabled = true;
+
+  addMessage("user", question);
+  const thinking = addThinking();
+
+  try {
+    const res = await fetch(`${API}/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+
+    thinking.clear();
+    thinking.el.remove();
+
+    if (!res.ok) {
+      const err = await res.json();
+      const msg = document.createElement("div");
+      msg.className = "message assistant";
+      msg.innerHTML = `<div class="error-msg">⚠ ${err.detail || "Something went wrong"}</div>`;
+      document.getElementById("messages").appendChild(msg);
+      return;
+    }
+
+    const data = await res.json();
+    addMessage("assistant", data.answer, {
+      confidence: data.confidence,
+      strategy: data.strategy,
+      sources: data.sources,
+    });
+
+  } catch (e) {
+    thinking.clear();
+    thinking.el.remove();
+    const msg = document.createElement("div");
+    msg.className = "message assistant";
+    msg.innerHTML = `<div class="error-msg">⚠ Could not reach API at ${API}. Is it running?</div>`;
+    document.getElementById("messages").appendChild(msg);
+  } finally {
+    isLoading = false;
+    document.getElementById("send-btn").disabled = false;
+    input.focus();
+  }
+}
+
+checkHealth();
+</script>
+</body>
+</html>
