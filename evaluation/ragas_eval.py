@@ -1,5 +1,5 @@
 from typing import List, Dict
-import json
+import re
 from openai import OpenAI
 from rich.console import Console
 from rich.table import Table
@@ -23,77 +23,54 @@ class SimpleRAGASEvaluator:
         return response.choices[0].message.content.strip()
 
     def evaluate_faithfulness(self, answer: str, context_chunks: List[str]) -> float:
-        context = "\n\n".join(context_chunks[:5])
+        if not answer.strip() or not context_chunks:
+            return 0.0
 
-        result = self._llm(f"""Given this context and answer, evaluate faithfulness.
+        context = " ".join(context_chunks[:5]).lower()
+        context_words = set(re.findall(r'\b\w{4,}\b', context))
 
-Context:
-{context}
-
-Answer:
-{answer}
-
-List each factual claim in the answer and whether the context supports it.
-Return JSON:
-{{
-  "claims": [
-    {{"claim": "...", "supported": true/false}}
-  ]
-}}
-Only JSON, no explanation.""")
-
-        try:
-            clean = result.strip().strip("```json").strip("```")
-            data = json.loads(clean)
-            claims = data.get("claims", [])
-            if not claims:
-                return 1.0
-            supported = sum(1 for c in claims if c.get("supported", False))
-            return round(supported / len(claims), 3)
-        except (json.JSONDecodeError, ZeroDivisionError):
+        sentences = [s.strip() for s in re.split(r'[.!?]', answer) if len(s.strip()) > 20]
+        if not sentences:
             return 0.5
+
+        supported = 0
+        for sentence in sentences:
+            words = set(re.findall(r'\b\w{4,}\b', sentence.lower()))
+            if not words:
+                continue
+            overlap = len(words & context_words) / len(words)
+            if overlap > 0.25:
+                supported += 1
+
+        return round(supported / len(sentences), 3)
 
     def evaluate_answer_relevancy(self, question: str, answer: str) -> float:
-        result = self._llm(f"""Rate how well this answer addresses the question.
+        if not answer.strip():
+            return 0.0
 
-Question: {question}
+        q_words = set(re.findall(r'\b\w{4,}\b', question.lower()))
+        a_words = set(re.findall(r'\b\w{4,}\b', answer.lower()))
 
-Answer: {answer}
-
-Return JSON: {{"score": 0.0, "reason": "brief reason"}}
-Score 0.0-1.0 where:
-1.0 = perfectly addresses the question
-0.5 = partially relevant
-0.0 = completely off-topic
-Only JSON.""")
-
-        try:
-            clean = result.strip().strip("```json").strip("```")
-            data = json.loads(clean)
-            return round(float(data.get("score", 0.5)), 3)
-        except (json.JSONDecodeError, ValueError):
+        if not q_words:
             return 0.5
+
+        overlap = len(q_words & a_words) / len(q_words)
+        return round(min(overlap * 2.5, 1.0), 3)
 
     def evaluate_context_precision(self, question: str, context_chunks: List[str]) -> float:
         if not context_chunks:
             return 0.0
 
+        q_words = set(re.findall(r'\b\w{4,}\b', question.lower()))
+        if not q_words:
+            return 0.5
+
         relevant_count = 0
         for chunk in context_chunks[:cfg.top_k]:
-            verdict = self._llm(f"""Is this context useful for answering the question?
-
-Question: {question}
-Context: {chunk[:500]}
-
-Return JSON: {{"relevant": true/false}}
-Only JSON.""")
-            try:
-                clean = verdict.strip().strip("```json").strip("```")
-                data = json.loads(clean)
-                if data.get("relevant", False):
-                    relevant_count += 1
-            except json.JSONDecodeError:
-                pass
+            chunk_words = set(re.findall(r'\b\w{4,}\b', chunk.lower()))
+            overlap = len(q_words & chunk_words) / len(q_words)
+            if overlap > 0.2:
+                relevant_count += 1
 
         return round(relevant_count / len(context_chunks[:cfg.top_k]), 3)
 

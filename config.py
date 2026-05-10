@@ -6,7 +6,7 @@ class Config:
     # gemini_model:str="gemini-3.0-flash"
 
     ollama_base_url:str="http://localhost:11434/v1"
-    ollama_model:str="qwen3:4b"
+    ollama_model:str="qwen3:8b-q4_K_M"
     ollama_api_key:str="ollama"
 
 
@@ -19,7 +19,7 @@ class Config:
     chunk_size:int=512
     chunk_overlap:int=50
 
-    top_k:int=5
+    top_k:int=12
 
     max_graph_hops:int=2
 

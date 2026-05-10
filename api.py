@@ -13,7 +13,7 @@ import json
 sys.path.insert(0, "/home/avi/projects/R")
 
 from config import cfg
-from data.arxiv_loader import SAMPLE_DOCUMENTS
+from data.ik_loader import SAMPLE_DOCUMENTS
 from ingestion.chunker import RecursiveChunker
 from ingestion.embedder import Embedder
 from ingestion.vector_store import VectorStore

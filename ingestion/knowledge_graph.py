@@ -41,27 +41,42 @@ class KnowledgeGraph:
             f"{self.graph.number_of_edges()} edges [/green]"
         )
     def _extract_with_llm(self,chunk:Chunk)->Tuple[List[Entity],List[Relation]]:
-        prompt=f"""Extract named entities and relationships from this text.
-
-          Text:
-          {chunk.text}
-
+        prompt=f"""Extract legal entities and relationships from this Indian legal text.
+         Text: {chunk.text} 
          Return ONLY valid JSON in this exact format (no explanation, no markdown):
-        {{
-         "entities": [
-          {{"name": "EntityName", "type": "PERSON|ORGANIZATION|TECHNOLOGY|CONCEPT|LOCATION"}}
-         ],
-         "relations": [
-           {{"subject": "EntityName", "predicate": "RELATION_TYPE", "object": "EntityName"}}
-         ]
-        }} 
-        Rules:
-        - Only extract entities explicitly named in the text
-        - Predicate must be UPPERCASE_WITH_UNDERSCORES (e.g. FOUNDED_BY, DEVELOPED_BY, WON, TREATS)
-        - Both subject and object must be entities you listed
-        - Maximum 15 entities, 20 relations
-        - Return empty arrays if nothing clear to extract"""
-
+         {{
+           "entities": [
+            {{"name": "EntityName", "type": "CASE|ARTICLE|JUDGE|COURT|PERSON|ORGANIZATION|ACT|CONCEPT|AMENDMENT"}}
+          ],
+          "relations": [
+            {{"subject": "EntityName", "predicate": "RELATION_TYPE", "object": "EntityName"}}
+            ]  }}
+        
+           Entity type guide:
+           - CASE: court judgments e.g. "Maneka Gandhi v Union of India"
+           - ARTICLE: constitutional articles e.g. "Article 21"
+           - JUDGE: judges and justices e.g. "Justice Bhagwati"
+          - COURT: courts e.g. "Supreme Court of India", "Delhi High Court"
+           - ACT: legislation e.g. "Indian Penal Code", "CrPC"
+           - CONCEPT: legal concepts e.g. "due process", "basic structure doctrine"
+           - AMENDMENT: constitutional amendments e.g. "42nd Amendment"
+           - PERSON: petitioners, respondents, lawyers
+           - ORGANIZATION: government bodies, ministries
+        
+           Predicate guide (use these where applicable):
+           - CITED_IN, OVERRULED_BY, UPHELD_BY, INTERPRETED_BY
+           - GUARANTEES, RESTRICTS, AMENDS, VIOLATES
+           - AUTHORED_BY, DECIDED_BY, FILED_BY
+           - ESTABLISHES, APPLIES_TO, DERIVED_FROM
+        
+           Rules:
+           - Only extract entities explicitly named in the text
+            - Predicate must be UPPERCASE_WITH_UNDERSCORES
+           - Both subject and object must be in your entities list
+          - Maximum 15 entities, 20 relations
+           - Return empty arrays if nothing clear to extract"""
+        
+        
         try:
             response=self.llm.chat.completions.create(
                 model=cfg.ollama_model,

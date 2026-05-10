@@ -78,7 +78,7 @@ class RecursiveChunker:
                 chunk_id=f"{doc_id}_chunk_{chunk_index:03d}",
                 doc_id=doc_id,
                 doc_title=title,
-                text=chunk_text,
+                text=f"[{title}] {chunk_text}",
                 chunk_index=chunk_index,
                 token_count=self._count_tokens(chunk_text),
                 metadata=metadata,

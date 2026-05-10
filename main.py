@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from config import cfg
-from data.arxiv_loader import SAMPLE_DOCUMENTS
+from data.ik_loader import SAMPLE_DOCUMENTS
 from ingestion.chunker import RecursiveChunker
 from ingestion.embedder import Embedder
 from ingestion.vector_store import VectorStore
@@ -36,17 +36,21 @@ def run_ingestion_pipeline():
         )
         console.print(f"  Produced {len(chunks)} chunks")
         all_chunks.extend(chunks)
+    if vector_store.count()>0:
+        console.print(f"[dim]Vector store already populated: {vector_store.count()} vectors — skipping embedding[/dim]")
 
-    console.print(f"\n[bold]Embedding {len(all_chunks)} total chunks...[/bold]")
-    chunks_with_embeddings, embeddings = embedder.embed_chunks(all_chunks)
+    else:
+        console.print(f"\n[bold]Embedding {len(all_chunks)} total chunks...[/bold]")
+        chunks_with_embeddings, embeddings = embedder.embed_chunks(all_chunks)
 
-    vector_store.upsert_chunks(chunks_with_embeddings, embeddings)
-    console.print(f"[green]✓ Vector store: {vector_store.count()} vectors stored[/green]")
+        vector_store.upsert_chunks(chunks_with_embeddings, embeddings)
+        console.print(f"[green]✓ Vector store: {vector_store.count()} vectors stored[/green]")
 
         
     kg_cache = "data/kg_cache.pkl"
     if os.path.exists(kg_cache):
         console.print("[dim]Loading knowledge graph from cache...[/dim]")
+
         with open(kg_cache, "rb") as f:
             kg.graph = pickle.load(f)
     else:
@@ -57,7 +61,18 @@ def run_ingestion_pipeline():
     stats = kg.get_stats()
     console.print(f"[green]✓ Knowledge graph: {stats['nodes']} nodes, {stats['edges']} edges[/green]")
 
+    # DEBUG — add after "Loading knowledge graph from cache"
+
+    debug_embedder = Embedder()
+    test_vec = debug_embedder.embed_query("Maneka Gandhi personal liberty Article 21 Supreme Court")
+    results = vector_store.search(query_vector=test_vec, query_text="Maneka Gandhi", top_k=10)
+    console.print("\n[bold]DEBUG — Top 10 results for Maneka Gandhi query:[/bold]")
+    for r in results:
+        console.print(f"  {r.get('doc_title','?')[:60]} | score: {r.get('score',0):.3f}")
+
     return vector_store, kg, embedder
+
+    
 
 
 def run_query_pipeline(agent, evaluator, queries):
@@ -103,9 +118,9 @@ def main():
     evaluator = SimpleRAGASEvaluator()
 
     test_queries = [
-        "What is CRISPR and who invented it?",
-        "Who founded Anthropic and what technique do they use to train Claude?",
-        "How does a vector database find similar documents efficiently?",
+         "What did the Supreme Court say about Article 21 in Maneka Gandhi case?",
+        "What are the fundamental rights guaranteed under the Indian Constitution?",
+        "What is the basic structure doctrine and which case established it?",
     ]
 
     results = run_query_pipeline(agent, evaluator, test_queries)

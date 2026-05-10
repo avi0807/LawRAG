@@ -36,7 +36,7 @@ class MultiAgentGraphRAG:
         self.llm = OpenAI(base_url=cfg.ollama_base_url, api_key=cfg.ollama_api_key)
         self.graph = self._build_graph()
 
-    def _llm(self, system: str, user: str, max_tokens: int = 1500) -> str:
+    def _llm(self, system:str, user:str, max_tokens:int=1200)->str:
         response = self.llm.chat.completions.create(
             model=cfg.ollama_model,
             messages=[
@@ -52,7 +52,7 @@ class MultiAgentGraphRAG:
         console.print(f"\n[bold cyan]🎯 Orchestrator[/bold cyan] analyzing: '{state['query']}'")
 
         result_json = self._llm(
-            system="You are a query analysis agent. Extract key entities and decide retrieval strategy. Return ONLY valid JSON, no explanation.",
+            system="You are a query analysis agent for Indian legal research. Extract key legal entities and decide retrieval strategy. Return ONLY valid JSON, no explanation.",
             user=f"""Query: {state['query']}
 
 Return JSON:
@@ -64,14 +64,22 @@ Return JSON:
 
 Strategy options:
 - "vector": factual questions, definitions, "what is X"
-- "graph": relationship questions, "who created X", "how does X relate to Y"
-- "hybrid": complex multi-hop questions combining both""",
+- "graph": relationship questions, "who cited", "which cases", "how does X relate to Y"
+- "hybrid": complex multi-hop questions combining both
+
+Important: For questions containing words like "which cases", "who cited", "related to",
+"what cases", "which judgments" — always use "graph" or "hybrid" strategy and extract
+the legal entity being asked about as a key entity.""",
             max_tokens=400,
         )
 
         try:
             clean = result_json.strip().strip("```json").strip("```")
-            data = json.loads(clean)
+            if "<think>" in clean:
+                clean = clean.split("</think>")[-1].strip()
+            start = clean.find("{")
+            end = clean.rfind("}") + 1
+            data = json.loads(clean[start:end]) if start != -1 and end > 0 else {}
         except json.JSONDecodeError:
             data = {"key_entities": [], "strategy": "hybrid"}
 
@@ -100,7 +108,13 @@ Strategy options:
         graph_context = {}
 
         if strategy in ("vector", "hybrid"):
-            query_vector = self.embedder.embed_query(state["query"])
+            hypothetical=self._llm(
+                system="You are a legal expert. Write a one sentence hypothetical answer.",
+                user=f"Question: {state['query']}\nWrite a brief hypothetical answer as if you know it:",
+                max_tokens=100,
+            )
+            embed_text=hypothetical if hypothetical.strip() else state['query']
+            query_vector = self.embedder.embed_query(embed_text)
             results = self.vector_store.search(
                 query_vector=query_vector,
                 query_text=state["query"],
@@ -108,6 +122,21 @@ Strategy options:
             )
             new_chunks.extend(results)
             console.print(f"  Vector search: {len(results)} chunks retrieved")
+
+        query_lower = state["query"].lower()
+        force_keywords = ["maneka gandhi", "kharak singh", "olga tellis", 
+                  "vishaka", "kesavananda", "indra sawhney", "bachan singh"]
+
+        for keyword in force_keywords:
+            if keyword in query_lower:
+        # Search specifically for this case
+                case_vector = self.embedder.embed_query(keyword)
+                case_results = self.vector_store.search(
+                    query_vector=case_vector,
+                    query_text=keyword,
+                    top_k=3,)
+                new_chunks.extend(case_results)
+                console.print(f"  Force-included: {keyword} ({len(case_results)} chunks)")
 
         if strategy in ("graph", "hybrid"):
             all_neighborhoods = []
@@ -175,7 +204,11 @@ Reply with JSON:
 
         try:
             clean = verdict.strip().strip("```json").strip("```")
-            data = json.loads(clean)
+            if "<think>" in clean:
+                clean = clean.split("</think>")[-1].strip()
+            start = clean.find("{")
+            end = clean.rfind("}") + 1
+            data = json.loads(clean[start:end]) if start != -1 and end > 0 else {}
             sufficient = data.get("sufficient", True)
             missing = data.get("missing", "")
         except json.JSONDecodeError:
@@ -217,7 +250,7 @@ Reply with JSON:
     def generate(self, state: AgentState) -> AgentState:
         console.print(f"\n[bold cyan]✍️  Generator[/bold cyan] synthesizing answer")
 
-        top_chunks = state["retrieved_chunks"][:cfg.top_k * 2]
+        top_chunks = state["retrieved_chunks"][:cfg.top_k]
         sources = []
         evidence_blocks = []
 
@@ -226,12 +259,12 @@ Reply with JSON:
             if title not in sources:
                 sources.append(title)
             src_idx = sources.index(title) + 1
-            evidence_blocks.append(f"[{src_idx}] {chunk['text']}")
+            evidence_blocks.append(f"[{src_idx}] {chunk['text'][:600]}")
 
         evidence_text = "\n\n".join(evidence_blocks)
 
         raw_answer = self._llm(
-            system="You are a research assistant. Answer questions using ONLY the provided evidence. Always cite sources using [N] notation. If evidence is insufficient, say so. End your response with: CONFIDENCE: 0.X",
+            system="You are an Indian legal research assistant. Answer using ONLY the provided evidence. NEVER use outside knowledge. If the evidence does not contain the answer, say exactly: 'The knowledge base does not contain information about this topic.' Always cite sources using [N] notation. End your response with: CONFIDENCE: 0.X",
             user=f"""Question: {state['query']}
 
 Evidence:
@@ -244,6 +277,8 @@ Provide a comprehensive, accurate answer with citations.""",
             max_tokens=1500,
         )
 
+        console.print(f"[dim]Raw answer length: {len(raw_answer)} chars[/dim]")
+
         confidence = 0.7
         answer_text = raw_answer
         if "CONFIDENCE:" in raw_answer:
@@ -254,7 +289,14 @@ Provide a comprehensive, accurate answer with citations.""",
             except (ValueError, IndexError):
                 pass
 
+        if not answer_text.strip():
+            answer_text = raw_answer.strip()
+
         console.print(f"  [green]✓ Answer generated (confidence: {confidence:.1f})[/green]")
+
+        console.print(f"\n[bold]DEBUG evidence sent to generator:[/bold]")
+        for i, chunk in enumerate(top_chunks):
+            console.print(f"  [{i+1}] {chunk.get('doc_title','?')[:40]} | {chunk.get('text','')[:100]}")
 
         return {
             **state,

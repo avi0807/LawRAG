@@ -3,27 +3,30 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ResearchMind</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>LawRAG</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg: #0c0c0f;
-    --surface: #13131a;
-    --surface2: #1a1a24;
-    --border: #2a2a3a;
-    --accent: #7c6af7;
-    --accent2: #a78bfa;
-    --green: #34d399;
-    --amber: #fbbf24;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --danger: #f87171;
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --surface2: #f0ece3;
+    --border: #ddd8cc;
+    --border2: #c8c2b4;
+    --accent: #1a3a5c;
+    --accent2: #2a5f8f;
+    --accent3: #c17f3a;
+    --green: #2a7a4b;
+    --text: #1c1a16;
+    --text2: #4a4640;
+    --muted: #8a8278;
+    --tag-bg: #e8f0f8;
+    --tag-color: #1a3a5c;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Libre Franklin', sans-serif;
     background: var(--bg);
     color: var(--text);
     height: 100vh;
@@ -37,250 +40,341 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 28px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
+    padding: 0 32px;
+    height: 58px;
+    background: var(--accent);
     flex-shrink: 0;
   }
 
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .logo-icon {
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-  }
-
   .logo-text {
-    font-family: 'Instrument Serif', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 22px;
+    color: #ffffff;
     letter-spacing: -0.3px;
   }
 
-  .logo-text span { color: var(--accent2); font-style: italic; }
+  .logo-text em { font-style: italic; color: #f0c070; }
 
-  .stats-bar {
+  .header-right { display: flex; align-items: center; gap: 24px; }
+
+  .header-stat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
     display: flex;
-    gap: 20px;
     align-items: center;
+    gap: 5px;
   }
 
-  .stat {
+  .header-stat span { color: #f0c070; font-weight: 500; }
+
+  .status-pill {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.1);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.15);
   }
 
-  .stat-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--muted);
-  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #aaa; }
+  .status-dot.green { background: #4dbb7a; box-shadow: 0 0 6px #4dbb7a; }
+  .status-dot.amber { background: #f0c070; }
 
-  .stat-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .stat-dot.amber { background: var(--amber); }
+  main { display: flex; flex: 1; overflow: hidden; }
 
-  /* ── Main layout ── */
-  main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  /* ── Chat area ── */
-  .chat-area {
-    flex: 1;
+  /* ── Left panel ── */
+  .info-panel {
+    width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-  }
-
-  .messages {
-    flex: 1;
     overflow-y: auto;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+    flex-shrink: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
 
-  /* ── Empty state ── */
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-    padding: 40px;
+  .info-top {
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid var(--border);
   }
 
-  .empty-title {
-    font-family: 'Instrument Serif', serif;
-    font-size: 42px;
-    text-align: center;
-    letter-spacing: -1px;
-    line-height: 1.1;
-  }
-
-  .empty-title em { color: var(--accent2); font-style: italic; }
-
-  .empty-subtitle {
+  .info-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
     color: var(--muted);
-    font-size: 15px;
-    text-align: center;
-    max-width: 420px;
-    line-height: 1.6;
+    margin-bottom: 10px;
   }
 
-  .suggestions {
+  .info-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .info-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+
+  /* ── Stats grid ── */
+  .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    width: 100%;
-    max-width: 560px;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
 
-  .suggestion {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--muted);
-    transition: all 0.15s;
-    text-align: left;
-    line-height: 1.4;
-  }
+  .stat-cell { background: var(--surface); padding: 16px; display: flex; flex-direction: column; gap: 3px; }
+  .stat-cell .val { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--accent); line-height: 1; }
+  .stat-cell .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
 
-  .suggestion:hover {
-    border-color: var(--accent);
-    color: var(--text);
-    background: var(--surface2);
-  }
+  .info-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
 
-  .suggestion strong {
-    display: block;
-    color: var(--text);
-    font-size: 12px;
-    margin-bottom: 4px;
-    font-weight: 500;
-  }
-
-  /* ── Messages ── */
-  .message {
+  /* ── Architecture diagram ── */
+  .arch-diagram {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    animation: fadeUp 0.3s ease;
+    gap: 10px;
   }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
+  .arch-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .arch-box {
+    flex: 1;
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .arch-box.blue { background: var(--tag-bg); color: var(--accent); border: 1px solid #c8daf0; }
+  .arch-box.amber { background: #fef3e2; color: #7a3f08; border: 1px solid #f0d8a8; }
+  .arch-box.green { background: #e8f5ee; color: #1a5c38; border: 1px solid #a8d8bc; }
+  .arch-box.dark { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+
+  .arch-arrow-h {
+    color: var(--border2);
+    font-size: 14px;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .arch-label {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .arch-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 0;
+    gap: 4px;
+  }
+
+  .arch-connector-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 60px;
+  }
+
+  .arch-connector-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .arch-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .arch-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 4px;
+  }
+
+  /* ── Pipeline ── */
+  .pipeline { display: flex; flex-direction: column; }
+
+  .pipeline-step {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .pipeline-step:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-text { font-size: 11px; color: var(--text2); line-height: 1.6; }
+  .step-text strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 1px; }
+
+  /* ── Stack ── */
+  .stack-list { display: flex; flex-direction: column; }
+
+  .stack-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .stack-row:last-child { border-bottom: none; }
+  .stack-key { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+  .stack-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent2); background: var(--tag-bg); padding: 2px 7px; border-radius: 3px; }
+
+  /* ── Chat area ── */
+  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .empty-chat {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .empty-chat .big { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--border2); font-style: italic; }
+  .empty-chat .small { font-size: 13px; color: var(--muted); max-width: 360px; line-height: 1.6; }
+
+  /* ── Messages ── */
+  .message { display: flex; flex-direction: column; gap: 6px; animation: rise 0.25s ease; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
   .message.user { align-items: flex-end; }
   .message.assistant { align-items: flex-start; }
 
-  .bubble {
-    max-width: 78%;
-    padding: 14px 18px;
-    border-radius: 14px;
-    font-size: 14px;
-    line-height: 1.7;
-  }
+  .bubble { max-width: 76%; padding: 14px 18px; font-size: 13.5px; line-height: 1.75; border-radius: 14px; }
 
-  .user .bubble {
-    background: var(--accent);
-    color: #fff;
-    border-bottom-right-radius: 4px;
-  }
+  .user .bubble { background: var(--accent); color: #ffffff; border-bottom-right-radius: 3px; }
 
   .assistant .bubble {
     background: var(--surface);
+    color: var(--text);
     border: 1px solid var(--border);
-    border-bottom-left-radius: 4px;
+    border-bottom-left-radius: 3px;
     white-space: pre-wrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 
-  /* ── Metadata chips ── */
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    max-width: 78%;
-  }
+  .meta { display: flex; flex-wrap: wrap; gap: 5px; max-width: 76%; }
 
   .chip {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: 3px;
     border: 1px solid var(--border);
     color: var(--muted);
-    background: var(--surface2);
+    background: var(--surface);
   }
 
-  .chip.confidence { border-color: var(--green); color: var(--green); }
-  .chip.strategy   { border-color: var(--accent); color: var(--accent2); }
-  .chip.source     { border-color: var(--border); }
+  .chip.confidence { background: #e8f5ee; border-color: #a8d8bc; color: var(--green); }
+  .chip.strategy { background: var(--tag-bg); border-color: #c8daf0; color: var(--accent2); }
 
-  /* ── Thinking indicator ── */
+  /* ── Thinking ── */
   .thinking {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 18px;
+    padding: 12px 16px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    border-bottom-left-radius: 4px;
-    font-size: 13px;
-    color: var(--muted);
-    max-width: 78%;
-  }
-
-  .thinking-dots {
-    display: flex; gap: 4px;
-  }
-
-  .thinking-dots span {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.2s ease infinite;
-  }
-
-  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes pulse {
-    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-    40% { opacity: 1; transform: scale(1); }
-  }
-
-  .thinking-stage {
-    font-family: 'DM Mono', monospace;
+    border-bottom-left-radius: 3px;
     font-size: 12px;
-    color: var(--accent2);
+    color: var(--muted);
+    max-width: 76%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 
-  /* ── Input area ── */
+  .dots { display: flex; gap: 3px; }
+  .dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--accent2); animation: bounce 1.2s ease infinite; }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%,80%,100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.1); }
+  }
+
+  .thinking-stage { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent2); }
+
+  /* ── Input ── */
   .input-area {
-    padding: 20px 28px 24px;
+    padding: 16px 32px 20px;
     border-top: 1px solid var(--border);
     background: var(--surface);
     flex-shrink: 0;
@@ -290,14 +384,14 @@
     display: flex;
     gap: 10px;
     align-items: flex-end;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 14px;
+    background: var(--bg);
+    border: 1.5px solid var(--border2);
+    border-radius: 12px;
     padding: 10px 10px 10px 18px;
     transition: border-color 0.15s;
   }
 
-  .input-wrap:focus-within { border-color: var(--accent); }
+  .input-wrap:focus-within { border-color: var(--accent2); background: #fff; }
 
   textarea {
     flex: 1;
@@ -305,145 +399,165 @@
     border: none;
     outline: none;
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
+    font-family: 'Libre Franklin', sans-serif;
+    font-size: 13.5px;
     resize: none;
     line-height: 1.6;
     max-height: 120px;
     overflow-y: auto;
-    scrollbar-width: thin;
   }
 
   textarea::placeholder { color: var(--muted); }
 
   .send-btn {
-    width: 38px; height: 38px;
-    border-radius: 10px;
+    width: 36px; height: 36px;
+    border-radius: 8px;
     background: var(--accent);
     border: none;
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     transition: all 0.15s;
     color: white;
   }
 
-  .send-btn:hover { background: var(--accent2); transform: scale(1.05); }
-  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    width: 240px;
-    border-left: 1px solid var(--border);
-    background: var(--surface);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-
-  .sidebar-title {
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-  }
-
-  .sidebar-section { display: flex; flex-direction: column; gap: 8px; }
-
-  .stat-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .stat-card .value {
-    font-family: 'DM Mono', monospace;
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--accent2);
-  }
-
-  .stat-card .label {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    padding: 10px 12px;
-    background: var(--surface2);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-  }
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
   .error-msg {
-    background: #2d1515;
-    border: 1px solid var(--danger);
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
     border-radius: 10px;
     padding: 12px 16px;
-    font-size: 13px;
-    color: var(--danger);
-    max-width: 78%;
+    font-size: 12px;
+    color: #b91c1c;
+    max-width: 76%;
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <div class="logo-icon">🧠</div>
-    <div class="logo-text">Research<span>Mind</span></div>
-  </div>
-  <div class="stats-bar">
-    <div class="stat">
-      <div class="stat-dot" id="status-dot"></div>
-      <span id="status-text">Connecting...</span>
+  <div class="logo-text">LAW<em>RAG</em></div>
+  <div class="header-right">
+    <div class="header-stat">Judgments <span id="header-docs">—</span></div>
+    <div class="header-stat">Vectors <span id="header-vectors">—</span></div>
+    <div class="header-stat">Graph Nodes <span id="header-nodes">—</span></div>
+    <div class="status-pill">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Connecting</span>
     </div>
-    <div class="stat">📄 <span id="header-docs">—</span> papers</div>
-    <div class="stat">🔷 <span id="header-vectors">—</span> vectors</div>
-    <div class="stat">🕸️ <span id="header-nodes">—</span> nodes</div>
   </div>
 </header>
 
 <main>
-  <div class="chat-area">
+  <div class="info-panel">
 
+    <div class="info-top">
+      <div class="info-label">About</div>
+      <div class="info-title">Indian Legal Research Assistant</div>
+      <div class="info-desc">Ask questions across Supreme Court judgments and the Constitution of India. Powered by hybrid vector search and knowledge graph reasoning over landmark cases including Maneka Gandhi, Kesavananda Bharati, Vishaka, and more.</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="val" id="stat-docs">—</div><div class="lbl">Documents</div></div>
+      <div class="stat-cell"><div class="val" id="stat-vectors">—</div><div class="lbl">Vectors</div></div>
+      <div class="stat-cell"><div class="val" id="stat-nodes">—</div><div class="lbl">Graph nodes</div></div>
+      <div class="stat-cell"><div class="val" id="stat-edges">—</div><div class="lbl">Graph edges</div></div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="info-section">
+      <div class="info-label">Architecture</div>
+      <div class="arch-diagram">
+
+        <div class="arch-section">
+          <div class="arch-section-title">Ingestion</div>
+          <div class="arch-row">
+            <div class="arch-box blue">SC Judgments<br/>(Indian Kanoon)</div>
+            <div class="arch-arrow-h">+</div>
+            <div class="arch-box blue">Constitution<br/>of India PDF</div>
+          </div>
+          <div class="arch-connector">
+            <div class="arch-connector-line"></div>
+            <div class="arch-connector-label">chunk → embed</div>
+            <div class="arch-connector-line"></div>
+          </div>
+          <div class="arch-row">
+            <div class="arch-box amber">Qdrant<br/>Vector DB</div>
+            <div class="arch-arrow-h">+</div>
+            <div class="arch-box amber">NetworkX<br/>Knowledge Graph</div>
+          </div>
+        </div>
+
+        <div class="arch-connector">
+          <div class="arch-connector-line"></div>
+          <div class="arch-connector-label">query time</div>
+          <div class="arch-connector-line"></div>
+        </div>
+
+        <div class="arch-section">
+          <div class="arch-section-title">Query Pipeline</div>
+          <div class="arch-row">
+            <div class="arch-box green">Legal Query</div>
+            <div class="arch-arrow-h">→</div>
+            <div class="arch-box dark">LangGraph<br/>Agents</div>
+            <div class="arch-arrow-h">→</div>
+            <div class="arch-box green">Cited<br/>Answer</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="info-section">
+      <div class="info-label">Agent Pipeline</div>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Orchestrator</strong>Identifies legal entities (cases, articles, judges) from your query and decides retrieval strategy — vector, graph, or hybrid.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Retriever</strong>Searches Qdrant for semantically similar judgment chunks and traverses the knowledge graph up to 2 hops for related cases and articles. FlashRank reranks results.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Critic</strong>Checks if retrieved evidence is legally sufficient. If not, expands the query and retries retrieval up to 2 times.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Generator</strong>Synthesizes a cited answer grounded strictly in retrieved judgments and constitutional provisions, with a confidence score.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stack -->
+    <div class="info-section">
+      <div class="info-label">Stack</div>
+      <div class="stack-list">
+        <div class="stack-row"><span class="stack-key">LLM</span><span class="stack-val">qwen3:4b</span></div>
+        <div class="stack-row"><span class="stack-key">Embeddings</span><span class="stack-val">nomic-embed</span></div>
+        <div class="stack-row"><span class="stack-key">Vector DB</span><span class="stack-val">Qdrant</span></div>
+        <div class="stack-row"><span class="stack-key">Graph</span><span class="stack-val">NetworkX</span></div>
+        <div class="stack-row"><span class="stack-key">Agents</span><span class="stack-val">LangGraph</span></div>
+        <div class="stack-row"><span class="stack-key">Reranker</span><span class="stack-val">FlashRank</span></div>
+        <div class="stack-row"><span class="stack-key">Data</span><span class="stack-val">Indian Kanoon</span></div>
+        <div class="stack-row"><span class="stack-key">API</span><span class="stack-val">FastAPI</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area">
     <div class="messages" id="messages">
-      <div class="empty-state" id="empty-state">
-        <div class="empty-title">Ask anything about<br/><em>RAG research</em></div>
-        <div class="empty-subtitle">
-          Powered by vector search + knowledge graph reasoning over 15 ArXiv papers.
-          Try a question below or type your own.
-        </div>
-        <div class="suggestions">
-          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="What is retrieval augmented generation and how does it work?">
-            <strong>📚 Foundations</strong>
-            What is retrieval augmented generation?
-          </div>
-          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="What are the main challenges and limitations of RAG systems?">
-            <strong>⚠️ Challenges</strong>
-            Main limitations of RAG systems?
-          </div>
-          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="How is RAG evaluated? What metrics are used?">
-            <strong>📊 Evaluation</strong>
-            How is RAG performance evaluated?
-          </div>
-          <div class="suggestion" onclick="ask(this.dataset.q)" data-q="What are the latest improvements to retrieval methods in RAG?">
-            <strong>🚀 Advances</strong>
-            Latest improvements in RAG retrieval?
-          </div>
-        </div>
+      <div class="empty-chat" id="empty-chat">
+        <div class="big">Ask anything</div>
+        <div class="small">Query across 27 Supreme Court judgments and the Constitution of India. Try asking about fundamental rights, landmark cases, or constitutional doctrines.</div>
       </div>
     </div>
 
@@ -451,60 +565,17 @@
       <div class="input-wrap">
         <textarea
           id="input"
-          placeholder="Ask a question about RAG research..."
+          placeholder="Ask about Indian law, constitutional rights, or landmark judgments..."
           rows="1"
           onkeydown="handleKey(event)"
           oninput="autoResize(this)"
         ></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
         </button>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-title">System</div>
-      <div class="status-indicator">
-        <div class="stat-dot" id="sidebar-dot"></div>
-        <span id="sidebar-status">Loading...</span>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-title">Knowledge Base</div>
-      <div class="stat-card">
-        <div class="value" id="stat-docs">—</div>
-        <div class="label">Papers ingested</div>
-      </div>
-      <div class="stat-card">
-        <div class="value" id="stat-vectors">—</div>
-        <div class="label">Vectors stored</div>
-      </div>
-      <div class="stat-card">
-        <div class="value" id="stat-nodes">—</div>
-        <div class="label">Graph nodes</div>
-      </div>
-      <div class="stat-card">
-        <div class="value" id="stat-edges">—</div>
-        <div class="label">Graph edges</div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-title">Stack</div>
-      <div style="font-size:12px;color:var(--muted);line-height:2;font-family:'DM Mono',monospace;">
-        LLM: qwen3:4b<br/>
-        Embed: nomic-embed<br/>
-        VectorDB: Qdrant<br/>
-        Graph: NetworkX<br/>
-        Agents: LangGraph<br/>
-        Reranker: FlashRank
       </div>
     </div>
   </div>
@@ -514,23 +585,13 @@
 const API = "http://localhost:8000";
 let isLoading = false;
 
-// ── Poll health endpoint ────────────────────────────────────
 async function checkHealth() {
   try {
     const res = await fetch(`${API}/health`);
     const data = await res.json();
-
     const ready = data.status === "ready";
-    const dot = document.getElementById("status-dot");
-    const txt = document.getElementById("status-text");
-    const sdot = document.getElementById("sidebar-dot");
-    const stxt = document.getElementById("sidebar-status");
-
-    dot.className = `stat-dot ${ready ? "green" : "amber"}`;
-    sdot.className = `stat-dot ${ready ? "green" : "amber"}`;
-    txt.textContent = ready ? "Ready" : "Loading pipeline...";
-    stxt.textContent = ready ? "Ready" : "Building index...";
-
+    document.getElementById("status-dot").className = `status-dot ${ready ? "green" : "amber"}`;
+    document.getElementById("status-text").textContent = ready ? "Ready" : "Loading...";
     document.getElementById("header-docs").textContent = data.documents;
     document.getElementById("header-vectors").textContent = data.vectors;
     document.getElementById("header-nodes").textContent = data.graph_nodes;
@@ -538,167 +599,121 @@ async function checkHealth() {
     document.getElementById("stat-vectors").textContent = data.vectors;
     document.getElementById("stat-nodes").textContent = data.graph_nodes;
     document.getElementById("stat-edges").textContent = data.graph_edges;
-
     if (!ready) setTimeout(checkHealth, 2000);
-  } catch (e) {
-    document.getElementById("status-dot").className = "stat-dot";
+  } catch {
+    document.getElementById("status-dot").className = "status-dot";
     document.getElementById("status-text").textContent = "Offline";
-    document.getElementById("sidebar-dot").className = "stat-dot";
-    document.getElementById("sidebar-status").textContent = "API offline";
     setTimeout(checkHealth, 3000);
   }
 }
 
-// ── Auto resize textarea ────────────────────────────────────
 function autoResize(el) {
   el.style.height = "auto";
   el.style.height = Math.min(el.scrollHeight, 120) + "px";
 }
 
-// ── Keyboard handler ────────────────────────────────────────
 function handleKey(e) {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
-// ── Suggestion click ────────────────────────────────────────
-function ask(q) {
-  document.getElementById("input").value = q;
-  sendMessage();
-}
-
-// ── Add message to DOM ──────────────────────────────────────
 function addMessage(role, content, meta = null) {
-  const empty = document.getElementById("empty-state");
+  const empty = document.getElementById("empty-chat");
   if (empty) empty.remove();
-
   const container = document.getElementById("messages");
-
   const msg = document.createElement("div");
   msg.className = `message ${role}`;
-
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = content;
   msg.appendChild(bubble);
-
   if (meta) {
     const metaDiv = document.createElement("div");
     metaDiv.className = "meta";
-
     if (meta.confidence !== undefined) {
       const c = document.createElement("div");
       c.className = "chip confidence";
       c.textContent = `confidence: ${(meta.confidence * 100).toFixed(0)}%`;
       metaDiv.appendChild(c);
     }
-
     if (meta.strategy) {
       const s = document.createElement("div");
       s.className = "chip strategy";
       s.textContent = `strategy: ${meta.strategy}`;
       metaDiv.appendChild(s);
     }
-
     if (meta.sources) {
-      meta.sources.slice(0, 3).forEach(src => {
+      meta.sources.slice(0, 2).forEach(src => {
         const d = document.createElement("div");
-        d.className = "chip source";
-        d.textContent = src.length > 40 ? src.slice(0, 40) + "…" : src;
+        d.className = "chip";
+        d.textContent = src.length > 45 ? src.slice(0, 45) + "…" : src;
         metaDiv.appendChild(d);
       });
     }
-
     msg.appendChild(metaDiv);
   }
-
   container.appendChild(msg);
   container.scrollTop = container.scrollHeight;
-  return msg;
 }
 
-// ── Add thinking indicator ──────────────────────────────────
 function addThinking() {
-  const empty = document.getElementById("empty-state");
+  const empty = document.getElementById("empty-chat");
   if (empty) empty.remove();
-
   const container = document.getElementById("messages");
   const msg = document.createElement("div");
   msg.className = "message assistant";
   msg.id = "thinking";
-
-  const stages = ["Orchestrating agents...", "Retrieving chunks...", "Evaluating evidence...", "Generating answer..."];
+  const stages = ["Identifying legal entities...", "Searching judgments...", "Traversing case graph...", "Synthesizing answer..."];
   let i = 0;
-
-  msg.innerHTML = `
-    <div class="thinking">
-      <div class="thinking-dots">
-        <span></span><span></span><span></span>
-      </div>
-      <span class="thinking-stage" id="thinking-stage">${stages[0]}</span>
-    </div>`;
-
+  msg.innerHTML = `<div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span class="thinking-stage" id="tstage">${stages[0]}</span></div>`;
   container.appendChild(msg);
   container.scrollTop = container.scrollHeight;
-
-  const interval = setInterval(() => {
+  const iv = setInterval(() => {
     i = (i + 1) % stages.length;
-    const el = document.getElementById("thinking-stage");
+    const el = document.getElementById("tstage");
     if (el) el.textContent = stages[i];
   }, 1800);
-
-  return { el: msg, clear: () => clearInterval(interval) };
+  return { el: msg, clear: () => clearInterval(iv) };
 }
 
-// ── Send message ────────────────────────────────────────────
 async function sendMessage() {
   if (isLoading) return;
   const input = document.getElementById("input");
   const question = input.value.trim();
   if (!question) return;
-
   isLoading = true;
   input.value = "";
   input.style.height = "auto";
   document.getElementById("send-btn").disabled = true;
-
   addMessage("user", question);
   const thinking = addThinking();
-
   try {
     const res = await fetch(`${API}/query`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
     });
-
     thinking.clear();
     thinking.el.remove();
-
     if (!res.ok) {
       const err = await res.json();
       const msg = document.createElement("div");
       msg.className = "message assistant";
-      msg.innerHTML = `<div class="error-msg">⚠ ${err.detail || "Something went wrong"}</div>`;
+      msg.innerHTML = `<div class="error-msg">${err.detail || "Something went wrong"}</div>`;
       document.getElementById("messages").appendChild(msg);
       return;
     }
-
     const data = await res.json();
     addMessage("assistant", data.answer, {
       confidence: data.confidence,
       strategy: data.strategy,
       sources: data.sources,
     });
-
-  } catch (e) {
+  } catch {
     thinking.clear();
     thinking.el.remove();
     const msg = document.createElement("div");
     msg.className = "message assistant";
-    msg.innerHTML = `<div class="error-msg">⚠ Could not reach API at ${API}. Is it running?</div>`;
+    msg.innerHTML = `<div class="error-msg">Could not reach API at ${API}. Is it running?</div>`;
     document.getElementById("messages").appendChild(msg);
   } finally {
     isLoading = false;
