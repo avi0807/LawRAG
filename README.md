@@ -250,3 +250,4 @@ All settings are defined in `config.py`:
 - PDF upload support
 - Conversational memory
 
+

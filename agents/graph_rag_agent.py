@@ -125,7 +125,9 @@ the legal entity being asked about as a key entity.""",
 
         query_lower = state["query"].lower()
         force_keywords = ["maneka gandhi", "kharak singh", "olga tellis", 
-                  "vishaka", "kesavananda", "indra sawhney", "bachan singh"]
+                   "vishaka", "kesavananda", "indra sawhney", "bachan singh",
+                    "gopalan", "minerva mills", "waman rao", "bennett coleman",
+                    "sube singh", "bamboo hut"]
 
         for keyword in force_keywords:
             if keyword in query_lower:
