@@ -2,6 +2,8 @@
 
 A multi-agent retrieval-augmented generation system over Indian Supreme Court judgments and the Constitution of India. Hybrid retrieval (BM25 + dense + knowledge graph), LangGraph orchestration with self-critique, calibrated confidence, sentence-level citation grounding, and real token streaming. Runs locally on Ollama.
 
+<img width="1910" height="969" alt="Screenshot 2026-05-22 034022" src="https://github.com/user-attachments/assets/8f63760f-37bc-4cb7-a708-618867436039" />
+
 ---
 
 ## Locked baseline (12-query golden set, May 2026)
@@ -19,7 +21,7 @@ A multi-agent retrieval-augmented generation system over Indian Supreme Court ju
 
 **Latency:** ~55s per query end-to-end on a local Qwen3-8B-Q4 model with a 6 GB RTX 3050. Streaming first-token latency: ~1–2s.
 
-**Confidence calibration is real:** bad answers (failed retrieval, out-of-scope queries) cluster at confidence ≤ 0.15. Good answers cluster ≥ 0.85. The system can flag its own failures.
+**Confidence calibration:** bad answers (failed retrieval, out-of-scope queries) cluster at confidence ≤ 0.15. Good answers cluster ≥ 0.85. The system can flag its own failures.
 
 Frozen baseline: `evaluation/results/baseline.json` and `evaluation/results/baseline.jsonl`.
 
@@ -254,8 +256,4 @@ LawRAG/
 
 These are explicitly *not bugs*; they're scope choices. See `RAG_STUDY_GUIDE.md` for what each would take to address.
 
----
 
-## Studying / interview prep
-
-A self-contained guide covering the full theory and skills behind this project (RAG, vector DBs, BM25, RRF, knowledge graphs, LangChain/LangGraph, streaming, evaluation): **`RAG_STUDY_GUIDE.md`**.
