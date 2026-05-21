@@ -1,0 +1,54 @@
+{
+  "n_cases": 12,
+  "n_positive": 11,
+  "failed": 0,
+  "total_seconds": 655.0,
+  "avg_ms": 54587.0,
+  "per_metric": {
+    "entity_recall": {
+      "mean": 0.917,
+      "median": 1.0,
+      "min": 0.0
+    },
+    "source_recall": {
+      "mean": 0.875,
+      "median": 1.0,
+      "min": 0.0
+    },
+    "keyword_presence": {
+      "mean": 0.875,
+      "median": 1.0,
+      "min": 0.0
+    },
+    "confidence": {
+      "mean": 0.703,
+      "median": 0.804,
+      "min": 0.15
+    },
+    "grounded_rate": {
+      "mean": 0.821,
+      "median": 1.0,
+      "min": 0.0
+    },
+    "ragas_faithfulness": {
+      "mean": 0.904,
+      "median": 1.0,
+      "min": 0.0
+    },
+    "ragas_relevancy": {
+      "mean": 0.875,
+      "median": 1.0,
+      "min": 0.0
+    },
+    "ragas_precision": {
+      "mean": 1.0,
+      "median": 1.0,
+      "min": 1.0
+    },
+    "ragas_overall": {
+      "mean": 0.926,
+      "median": 1.0,
+      "min": 0.333
+    }
+  }
+}

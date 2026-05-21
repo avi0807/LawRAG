@@ -1,809 +1,1363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LawRAG</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LawRAG · Indian Legal Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
+  /* ─────────────────────────────────────────────
+     Tokens — light theme
+     ──────────────────────────────────────────── */
   :root {
-    --bg: #f5f2ec;
-    --surface: #ffffff;
-    --surface2: #f0ece3;
-    --border: #ddd8cc;
-    --border2: #c8c2b4;
-    --accent: #1a3a5c;
-    --accent2: #2a5f8f;
-    --accent3: #c17f3a;
-    --green: #2a7a4b;
-    --text: #1c1a16;
-    --text2: #4a4640;
-    --muted: #8a8278;
-    --tag-bg: #e8f0f8;
-    --tag-color: #1a3a5c;
+    --bg-0: #f5f6fa;
+    --bg-1: #ffffff;
+    --bg-2: #eef0f7;
+    --surface: rgba(255, 255, 255, 0.7);
+    --surface-strong: rgba(255, 255, 255, 0.92);
+    --border: rgba(15, 23, 42, 0.08);
+    --border-strong: rgba(15, 23, 42, 0.16);
+    --text: #0f172a;
+    --text-2: #475569;
+    --muted: #94a3b8;
+
+    --accent: #3b6cf2;             /* primary blue */
+    --accent-2: #8b5cf6;            /* lavender */
+    --accent-3: #14b8a6;            /* teal */
+    --accent-warm: #f59e0b;         /* warm amber */
+
+    --gradient-1: linear-gradient(135deg, #3b6cf2 0%, #8b5cf6 100%);
+    --gradient-soft: linear-gradient(135deg, rgba(59,108,242,0.10), rgba(139,92,246,0.10));
+
+    --radius: 14px;
+    --radius-lg: 20px;
+
+    --shadow-soft: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px rgba(15,23,42,0.06);
+    --shadow-glow: 0 0 0 1px rgba(59,108,242,0.30), 0 12px 40px rgba(59,108,242,0.18);
+
+    --easing: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
 
   body {
-    font-family: 'Libre Franklin', sans-serif;
-    background: var(--bg);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+    background: var(--bg-0);
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  /* ── Header ── */
+  /* Ambient background — soft animated radial gradients on light */
+  body::before, body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+  body::before {
+    background:
+      radial-gradient(60% 40% at 12% 10%, rgba(59,108,242,0.10), transparent 70%),
+      radial-gradient(40% 30% at 90% 20%, rgba(139,92,246,0.10), transparent 70%),
+      radial-gradient(50% 50% at 80% 90%, rgba(20,184,166,0.08), transparent 70%);
+    animation: aurora 24s ease-in-out infinite alternate;
+    filter: blur(20px);
+  }
+  body::after {
+    background: linear-gradient(180deg, rgba(245,246,250,0), rgba(245,246,250,0.5) 80%);
+  }
+
+  @keyframes aurora {
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    50%  { transform: translate3d(2%, -1%, 0) scale(1.05); }
+    100% { transform: translate3d(-2%, 1%, 0) scale(1.02); }
+  }
+
+  /* ─────────────────────────────────────────────
+     Layout
+     ──────────────────────────────────────────── */
+  .app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    grid-template-rows: 64px 1fr;
+    height: 100vh;
+  }
+
   header {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 32px;
-    height: 58px;
-    background: var(--accent);
-    flex-shrink: 0;
+    padding: 0 24px;
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    background: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid var(--border);
+    z-index: 20;
   }
 
-  .logo-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    color: #ffffff;
-    letter-spacing: -0.3px;
-  }
-
-  .logo-text em { font-style: italic; color: #f0c070; }
-
-  .header-right { display: flex; align-items: center; gap: 24px; }
-
-  .header-stat {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
+  .brand {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 12px;
   }
 
-  .header-stat span { color: #f0c070; font-weight: 500; }
+  .brand-mark {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--gradient-1);
+    position: relative;
+    box-shadow: 0 4px 14px rgba(59,108,242,0.30);
+  }
+  .brand-mark::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 4px;
+    background: #ffffff;
+  }
+  .brand-mark::after {
+    content: "";
+    position: absolute;
+    inset: 11px;
+    border-radius: 2px;
+    background: var(--gradient-1);
+  }
+
+  .brand-text {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .stat-inline {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-inline b {
+    color: var(--text);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 900px) { .stat-inline { display: none; } }
 
   .status-pill {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: rgba(255,255,255,0.1);
-    font-size: 11px;
-    font-family: 'IBM Plex Mono', monospace;
-    color: rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.15);
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(15,23,42,0.04);
+    border: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-2);
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .dot.ready {
+    background: var(--accent-3);
+    box-shadow: 0 0 0 4px rgba(20,184,166,0.18), 0 0 12px rgba(20,184,166,0.5);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .dot.loading {
+    background: var(--accent-warm);
+    box-shadow: 0 0 0 4px rgba(245,158,11,0.18);
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 4px rgba(20,184,166,0.18), 0 0 12px rgba(20,184,166,0.5); }
+    50%     { box-shadow: 0 0 0 6px rgba(20,184,166,0.10), 0 0 18px rgba(20,184,166,0.35); }
   }
 
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #aaa; }
-  .status-dot.green { background: #4dbb7a; box-shadow: 0 0 6px #4dbb7a; }
-  .status-dot.amber { background: #f0c070; }
-
-  main { display: flex; flex: 1; overflow: hidden; }
-
-  /* ── Left panel ── */
-  .info-panel {
-    width: 300px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
+  /* ─────────────────────────────────────────────
+     Sidebar
+     ──────────────────────────────────────────── */
+  .sidebar {
     overflow-y: auto;
-    flex-shrink: 0;
+    padding: 20px 16px 24px;
+    border-right: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.30));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-color: var(--border-strong) transparent;
   }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius: 3px; }
 
-  .info-top {
-    padding: 24px 24px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .info-label {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 2px;
+  .label {
+    font-size: 10px;
     text-transform: uppercase;
+    letter-spacing: 0.14em;
     color: var(--muted);
+    font-weight: 600;
+    margin: 8px 6px 8px;
+  }
+
+  /* Stat tiles */
+  .tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .tile {
+    padding: 14px 14px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform .35s var(--easing), border-color .35s var(--easing), background .35s var(--easing);
+  }
+  .tile:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    background: var(--surface-strong);
+  }
+  .tile .v {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .l {
+    font-size: 10.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+
+  /* Pipeline */
+  .panel {
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .panel h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-2);
+    font-weight: 600;
     margin-bottom: 10px;
   }
 
-  .info-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--accent);
-    line-height: 1.3;
-    margin-bottom: 8px;
-  }
-
-  .info-desc {
-    font-size: 12px;
-    color: var(--text2);
-    line-height: 1.7;
-  }
-
-  /* ── Stats grid ── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--border);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .stat-cell { background: var(--surface); padding: 16px; display: flex; flex-direction: column; gap: 3px; }
-  .stat-cell .val { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--accent); line-height: 1; }
-  .stat-cell .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
-
-  .info-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
-
-  /* ── Architecture diagram ── */
-  .arch-diagram {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .arch-row {
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-
-  .arch-box {
-    flex: 1;
-    padding: 7px 8px;
-    border-radius: 6px;
-    font-size: 10px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 500;
-    text-align: center;
-    line-height: 1.3;
-  }
-
-  .arch-box.blue { background: var(--tag-bg); color: var(--accent); border: 1px solid #c8daf0; }
-  .arch-box.amber { background: #fef3e2; color: #7a3f08; border: 1px solid #f0d8a8; }
-  .arch-box.green { background: #e8f5ee; color: #1a5c38; border: 1px solid #a8d8bc; }
-  .arch-box.dark { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
-
-  .arch-arrow-h {
-    color: var(--border2);
-    font-size: 14px;
-    padding: 0 4px;
-    flex-shrink: 0;
-  }
-
-  .arch-label {
-    font-size: 9px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-    font-weight: 600;
-  }
-
-  .arch-connector {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 0;
-    gap: 4px;
-  }
-
-  .arch-connector-line {
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-    max-width: 60px;
-  }
-
-  .arch-connector-label {
-    font-size: 9px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    white-space: nowrap;
-  }
-
-  .arch-section {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .arch-section-title {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--accent3);
-    margin-bottom: 4px;
-  }
-
-  /* ── Pipeline ── */
-  .pipeline { display: flex; flex-direction: column; }
-
-  .pipeline-step {
+  .pipe-step {
+    position: relative;
     display: flex;
     gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    align-items: flex-start;
+    padding: 8px 0;
   }
-
-  .pipeline-step:last-child { border-bottom: none; }
-
-  .step-num {
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: white;
-    font-size: 10px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .pipe-step + .pipe-step { border-top: 1px dashed var(--border); }
+  .pipe-step .num {
     flex-shrink: 0;
-    margin-top: 1px;
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    background: rgba(59,108,242,0.08);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(59,108,242,0.20);
+    margin-top: 2px;
+    transition: all .3s var(--easing);
+  }
+  .pipe-step.active .num {
+    background: var(--gradient-1);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 0 0 4px rgba(59,108,242,0.15);
+  }
+  .pipe-step.done .num {
+    background: rgba(20,184,166,0.10);
+    color: var(--accent-3);
+    border-color: rgba(20,184,166,0.25);
+  }
+  .pipe-step .body { font-size: 12px; line-height: 1.55; }
+  .pipe-step .body strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 1px; }
+  .pipe-step .body span { color: var(--muted); }
+
+  .pipe-step .body .live {
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--accent);
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity .3s var(--easing), max-height .3s var(--easing), margin-top .3s var(--easing);
+  }
+  .pipe-step.active .body .live,
+  .pipe-step.done .body .live {
+    opacity: 1;
+    max-height: 60px;
+    margin-top: 4px;
   }
 
-  .step-text { font-size: 11px; color: var(--text2); line-height: 1.6; }
-  .step-text strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 1px; }
-
-  /* ── Stack ── */
-  .stack-list { display: flex; flex-direction: column; }
-
+  /* Stack rows */
   .stack-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 7px 0;
     font-size: 12px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .stack-row:last-child { border-bottom: none; }
+  .stack-row .k { color: var(--muted); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.1em; }
+  .stack-row .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    background: rgba(15,23,42,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
   }
 
-  .stack-row:last-child { border-bottom: none; }
-  .stack-key { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
-  .stack-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent2); background: var(--tag-bg); padding: 2px 7px; border-radius: 3px; }
-
-  /* ── Chat area ── */
-  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+  /* ─────────────────────────────────────────────
+     Chat area
+     ──────────────────────────────────────────── */
+  .chat {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
 
   .messages {
     flex: 1;
     overflow-y: auto;
-    padding: 28px 32px;
+    padding: 32px 32px 24px;
     display: flex;
     flex-direction: column;
     gap: 20px;
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-color: var(--border-strong) transparent;
+    scroll-behavior: smooth;
   }
+  .messages::-webkit-scrollbar { width: 8px; }
+  .messages::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius: 4px; }
 
-  .empty-chat {
+  /* Empty state with the 3D element */
+  .empty {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 12px;
-    color: var(--muted);
+    gap: 26px;
+    padding: 24px;
     text-align: center;
+    animation: fadeUp 0.7s var(--easing);
   }
 
-  .empty-chat .big { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--border2); font-style: italic; }
-  .empty-chat .small { font-size: 13px; color: var(--muted); max-width: 360px; line-height: 1.6; }
+  .scene {
+    width: 220px;
+    height: 220px;
+    perspective: 800px;
+    position: relative;
+  }
 
-  /* ── Messages ── */
-  .message { display: flex; flex-direction: column; gap: 6px; animation: rise 0.25s ease; }
+  /* Soft glow under the 3D shape */
+  .scene::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -10px;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(59,108,242,0.30), transparent 70%);
+    filter: blur(10px);
+    opacity: 0.7;
+    animation: glowPulse 6s var(--easing) infinite;
+  }
+  @keyframes glowPulse {
+    0%,100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+    50%     { opacity: 0.75; transform: translateX(-50%) scale(1.08); }
+  }
 
-  @keyframes rise {
+  /* Octahedron — pure CSS 3D, slow rotation */
+  .octa {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 130px; height: 130px;
+    transform-style: preserve-3d;
+    animation: spin 22s linear infinite;
+  }
+  @keyframes spin {
+    0%   { transform: rotateX(0deg)   rotateY(0deg)   rotateZ(0deg); }
+    100% { transform: rotateX(360deg) rotateY(720deg) rotateZ(0deg); }
+  }
+
+  .face {
+    position: absolute;
+    width: 0; height: 0;
+    left: 50%; top: 50%;
+    border-left: 65px solid transparent;
+    border-right: 65px solid transparent;
+    transform-origin: 50% 0;
+    /* gradient triangles via background isn't possible on borders; use pseudo overlays */
+  }
+  /* Top pyramid (4 triangles pointing up) */
+  .face.top    { border-bottom: 110px solid rgba(59,108,242,0.30);  transform: translate(-50%, 0)   rotateY(0deg)   rotateX(35deg); }
+  .face.right  { border-bottom: 110px solid rgba(139,92,246,0.30);  transform: translate(-50%, 0)   rotateY(90deg)  rotateX(35deg); }
+  .face.back   { border-bottom: 110px solid rgba(20,184,166,0.30);  transform: translate(-50%, 0)   rotateY(180deg) rotateX(35deg); }
+  .face.left   { border-bottom: 110px solid rgba(245,158,11,0.30);  transform: translate(-50%, 0)   rotateY(270deg) rotateX(35deg); }
+  /* Bottom pyramid (mirrored) */
+  .face.btop   { border-top: 110px solid rgba(59,108,242,0.30); border-bottom: none;
+                 transform: translate(-50%, 0)   rotateY(0deg)   rotateX(-35deg); }
+  .face.bright { border-top: 110px solid rgba(139,92,246,0.30); border-bottom: none;
+                 transform: translate(-50%, 0)   rotateY(90deg)  rotateX(-35deg); }
+  .face.bback  { border-top: 110px solid rgba(20,184,166,0.30); border-bottom: none;
+                 transform: translate(-50%, 0)   rotateY(180deg) rotateX(-35deg); }
+  .face.bleft  { border-top: 110px solid rgba(245,158,11,0.30); border-bottom: none;
+                 transform: translate(-50%, 0)   rotateY(270deg) rotateX(-35deg); }
+
+  /* Wireframe edges that catch the light */
+  .octa::before, .octa::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(59,108,242,0.0), rgba(139,92,246,0.5), rgba(20,184,166,0.5), rgba(59,108,242,0.0));
+    filter: blur(20px);
+    opacity: 0.45;
+    transform: translateZ(-30px);
+  }
+  .octa::after {
+    transform: translateZ(30px) rotate(90deg);
+    opacity: 0.30;
+  }
+
+  .empty h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 38px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .empty h1 em {
+    font-style: italic;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .empty p {
+    color: var(--text-2);
+    max-width: 460px;
+    line-height: 1.6;
+    font-size: 13.5px;
+  }
+
+  .chips-row {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 540px;
+  }
+  .suggest {
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all .25s var(--easing);
+  }
+  .suggest:hover {
+    color: var(--text);
+    background: var(--surface-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(15,23,42,0.08);
+  }
+
+  /* Messages */
+  .msg { display: flex; flex-direction: column; gap: 6px; animation: fadeUp 0.45s var(--easing); }
+  .msg.user { align-items: flex-end; }
+  .msg.assistant { align-items: flex-start; }
+  @keyframes fadeUp {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .message.user { align-items: flex-end; }
-  .message.assistant { align-items: flex-start; }
+  .bubble {
+    max-width: 78%;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    border-radius: 16px;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
 
-  .bubble { max-width: 76%; padding: 14px 18px; font-size: 13.5px; line-height: 1.75; border-radius: 14px; }
-
-  .user .bubble { background: var(--accent); color: #ffffff; border-bottom-right-radius: 3px; }
+  .user .bubble {
+    background: var(--gradient-1);
+    color: white;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 8px 22px rgba(59,108,242,0.25);
+  }
 
   .assistant .bubble {
-    background: var(--surface);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.95);
     border: 1px solid var(--border);
-    border-bottom-left-radius: 3px;
+    border-bottom-left-radius: 6px;
+    color: var(--text);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     white-space: pre-wrap;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-soft);
   }
 
-  .meta { display: flex; flex-wrap: wrap; gap: 5px; max-width: 76%; }
+  /* Streaming caret */
+  .bubble.streaming::after {
+    content: "▍";
+    color: var(--accent);
+    animation: blink 1s steps(2) infinite;
+    margin-left: 2px;
+    opacity: 0.8;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 78%;
+    margin-top: 2px;
+    animation: fadeUp 0.4s var(--easing);
+  }
 
   .chip {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    padding: 3px 9px;
+    border-radius: 999px;
     border: 1px solid var(--border);
-    color: var(--muted);
-    background: var(--surface);
+    color: var(--text-2);
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
+  .chip.confidence { color: #0d9488; border-color: rgba(20,184,166,0.30); background: rgba(20,184,166,0.08); }
+  .chip.strategy   { color: var(--accent); border-color: rgba(59,108,242,0.25); background: rgba(59,108,242,0.06); }
+  .chip.retry      { color: #b45309; border-color: rgba(245,158,11,0.30); background: rgba(245,158,11,0.08); }
 
-  .chip.confidence { background: #e8f5ee; border-color: #a8d8bc; color: var(--green); }
-  .chip.strategy { background: var(--tag-bg); border-color: #c8daf0; color: var(--accent2); }
-
-  /* ── Thinking ── */
-  .thinking {
+  /* Thinking / progress card */
+  .progress-card {
+    align-self: flex-start;
+    max-width: 78%;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border-bottom-left-radius: 6px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+    transition: opacity .3s var(--easing), max-height .4s var(--easing), padding .3s var(--easing), margin .3s var(--easing);
+  }
+  .progress-card.hide {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
+    margin: 0;
+  }
+  .progress-card .pc-head {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    border-bottom-left-radius: 3px;
     font-size: 12px;
-    color: var(--muted);
-    max-width: 76%;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    color: var(--text-2);
+  }
+  .progress-card .pc-head .stage {
+    color: var(--text);
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+  .pc-track {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .pc-track .seg {
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(15,23,42,0.06);
+    overflow: hidden;
+    position: relative;
+  }
+  .pc-track .seg .fill {
+    position: absolute; inset: 0;
+    background: var(--gradient-1);
+    transform: translateX(-101%);
+    transition: transform .5s var(--easing);
+  }
+  .pc-track .seg.done .fill { transform: translateX(0); }
+  .pc-track .seg.active .fill {
+    transform: translateX(0);
+    background: linear-gradient(90deg,
+      rgba(59,108,242,0) 0%,
+      rgba(59,108,242,0.9) 40%,
+      rgba(139,92,246,0.9) 60%,
+      rgba(59,108,242,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
   }
 
-  .dots { display: flex; gap: 3px; }
-  .dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--accent2); animation: bounce 1.2s ease infinite; }
-  .dots span:nth-child(2) { animation-delay: 0.2s; }
-  .dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes bounce {
-    0%,80%,100% { opacity: 0.3; transform: scale(0.8); }
-    40% { opacity: 1; transform: scale(1.1); }
-  }
-
-  .thinking-stage { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent2); }
-
-  /* ── Input ── */
-  .input-area {
-    padding: 16px 32px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-    flex-shrink: 0;
-  }
-
-  .input-wrap {
+  .pc-detail {
+    margin-top: 10px;
     display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    background: var(--bg);
-    border: 1.5px solid var(--border2);
-    border-radius: 12px;
-    padding: 10px 10px 10px 18px;
-    transition: border-color 0.15s;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-2);
+  }
+  .pc-detail .tag {
+    padding: 2px 8px;
+    background: rgba(15,23,42,0.04);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-2);
+  }
+  .pc-detail .tag.found { color: var(--accent); border-color: rgba(59,108,242,0.25); background: rgba(59,108,242,0.06); }
+  .pc-detail .tag.zero  { color: var(--muted); }
+
+  /* Dots */
+  .dots { display: inline-flex; gap: 3px; align-items: center; }
+  .dots i {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.2s ease infinite;
+  }
+  .dots i:nth-child(2) { animation-delay: .15s; }
+  .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce {
+    0%,80%,100% { opacity: 0.3; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-3px); }
   }
 
-  .input-wrap:focus-within { border-color: var(--accent2); background: #fff; }
+  /* Input */
+  .composer {
+    padding: 14px 24px 22px;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(245,246,250,0), rgba(255,255,255,0.7));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .composer-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .ghost-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all .2s var(--easing);
+  }
+  .ghost-btn:hover { color: var(--text); background: rgba(15,23,42,0.04); }
+
+  .input-shell {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    padding: 8px 8px 8px 18px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: border-color .25s var(--easing), box-shadow .25s var(--easing);
+  }
+  .input-shell:focus-within {
+    border-color: rgba(59,108,242,0.5);
+    box-shadow: var(--shadow-glow);
+  }
 
   textarea {
     flex: 1;
-    background: none;
+    background: transparent;
     border: none;
     outline: none;
     color: var(--text);
-    font-family: 'Libre Franklin', sans-serif;
-    font-size: 13.5px;
+    font-family: inherit;
+    font-size: 14px;
     resize: none;
     line-height: 1.6;
-    max-height: 120px;
+    max-height: 140px;
     overflow-y: auto;
+    padding: 8px 0;
   }
-
   textarea::placeholder { color: var(--muted); }
 
-  .send-btn {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    background: var(--accent);
+  .send {
+    width: 38px; height: 38px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
+    background: var(--gradient-1);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.15s;
-    color: white;
+    transition: all .2s var(--easing);
+    box-shadow: 0 6px 16px rgba(59,108,242,0.30);
+  }
+  .send:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(59,108,242,0.40); }
+  .send:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+  .error-card {
+    align-self: flex-start;
+    max-width: 78%;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.30);
+    color: #b91c1c;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 12.5px;
   }
 
-  .send-btn:hover { background: var(--accent2); }
-  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-  .error-msg {
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-size: 12px;
-    color: #b91c1c;
-    max-width: 76%;
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo-text">LAW<em>RAG</em></div>
-  <div class="header-right">
-    <div class="header-stat">Judgments <span id="header-docs">—</span></div>
-    <div class="header-stat">Vectors <span id="header-vectors">—</span></div>
-    <div class="header-stat">Graph Nodes <span id="header-nodes">—</span></div>
-    <div class="status-pill">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Connecting</span>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">LawRAG</div>
     </div>
-  </div>
-</header>
-
-<main>
-  <div class="info-panel">
-
-    <div class="info-top">
-      <div class="info-label">About</div>
-      <div class="info-title">Indian Legal Research Assistant</div>
-      <div class="info-desc">Ask questions across Supreme Court judgments and the Constitution of India. Powered by hybrid vector search and knowledge graph reasoning over landmark cases including Maneka Gandhi, Kesavananda Bharati, Vishaka, and more.</div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-cell"><div class="val" id="stat-docs">—</div><div class="lbl">Documents</div></div>
-      <div class="stat-cell"><div class="val" id="stat-vectors">—</div><div class="lbl">Vectors</div></div>
-      <div class="stat-cell"><div class="val" id="stat-nodes">—</div><div class="lbl">Graph nodes</div></div>
-      <div class="stat-cell"><div class="val" id="stat-edges">—</div><div class="lbl">Graph edges</div></div>
-    </div>
-
-    <!-- Architecture -->
-    <div class="info-section">
-      <div class="info-label">Architecture</div>
-      <div class="arch-diagram">
-
-        <div class="arch-section">
-          <div class="arch-section-title">Ingestion</div>
-          <div class="arch-row">
-            <div class="arch-box blue">SC Judgments<br/>(Indian Kanoon)</div>
-            <div class="arch-arrow-h">+</div>
-            <div class="arch-box blue">Constitution<br/>of India PDF</div>
-          </div>
-          <div class="arch-connector">
-            <div class="arch-connector-line"></div>
-            <div class="arch-connector-label">chunk → embed</div>
-            <div class="arch-connector-line"></div>
-          </div>
-          <div class="arch-row">
-            <div class="arch-box amber">Qdrant<br/>Vector DB</div>
-            <div class="arch-arrow-h">+</div>
-            <div class="arch-box amber">NetworkX<br/>Knowledge Graph</div>
-          </div>
-        </div>
-
-        <div class="arch-connector">
-          <div class="arch-connector-line"></div>
-          <div class="arch-connector-label">query time</div>
-          <div class="arch-connector-line"></div>
-        </div>
-
-        <div class="arch-section">
-          <div class="arch-section-title">Query Pipeline</div>
-          <div class="arch-row">
-            <div class="arch-box green">Legal Query</div>
-            <div class="arch-arrow-h">→</div>
-            <div class="arch-box dark">LangGraph<br/>Agents</div>
-            <div class="arch-arrow-h">→</div>
-            <div class="arch-box green">Cited<br/>Answer</div>
-          </div>
-        </div>
-
+    <div class="header-right">
+      <div class="stat-inline">judgments <b id="h-docs">—</b></div>
+      <div class="stat-inline">vectors <b id="h-vectors">—</b></div>
+      <div class="stat-inline">graph <b id="h-nodes">—</b></div>
+      <div class="status-pill">
+        <span class="dot" id="dot"></span>
+        <span id="status-text">Connecting</span>
       </div>
     </div>
+  </header>
 
-    <!-- Pipeline -->
-    <div class="info-section">
-      <div class="info-label">Agent Pipeline</div>
-      <div class="pipeline">
-        <div class="pipeline-step">
-          <div class="step-num">1</div>
-          <div class="step-text"><strong>Orchestrator</strong>Identifies legal entities (cases, articles, judges) from your query and decides retrieval strategy — vector, graph, or hybrid.</div>
+  <aside class="sidebar">
+    <div class="label">System</div>
+    <div class="tiles">
+      <div class="tile"><div class="v" id="t-docs">—</div><div class="l">documents</div></div>
+      <div class="tile"><div class="v" id="t-vectors">—</div><div class="l">vectors</div></div>
+      <div class="tile"><div class="v" id="t-bm25">—</div><div class="l">bm25 chunks</div></div>
+      <div class="tile"><div class="v" id="t-nodes">—</div><div class="l">graph nodes</div></div>
+    </div>
+
+    <div class="panel">
+      <h4>Pipeline</h4>
+      <div class="pipe-step" data-stage="orchestrate">
+        <div class="num">1</div>
+        <div class="body">
+          <strong>Orchestrate</strong>
+          <span>extract entities, choose strategy</span>
+          <div class="live" data-detail></div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-num">2</div>
-          <div class="step-text"><strong>Retriever</strong>Searches Qdrant for semantically similar judgment chunks and traverses the knowledge graph up to 2 hops for related cases and articles. FlashRank reranks results.</div>
+      </div>
+      <div class="pipe-step" data-stage="retrieve">
+        <div class="num">2</div>
+        <div class="body">
+          <strong>Retrieve</strong>
+          <span>BM25 + dense + graph fused via RRF</span>
+          <div class="live" data-detail></div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-num">3</div>
-          <div class="step-text"><strong>Critic</strong>Checks if retrieved evidence is legally sufficient. If not, expands the query and retries retrieval up to 2 times.</div>
+      </div>
+      <div class="pipe-step" data-stage="critique">
+        <div class="num">3</div>
+        <div class="body">
+          <strong>Critique</strong>
+          <span>evidence sufficient? heuristic or LLM</span>
+          <div class="live" data-detail></div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-num">4</div>
-          <div class="step-text"><strong>Generator</strong>Synthesizes a cited answer grounded strictly in retrieved judgments and constitutional provisions, with a confidence score.</div>
+      </div>
+      <div class="pipe-step" data-stage="generate">
+        <div class="num">4</div>
+        <div class="body">
+          <strong>Generate</strong>
+          <span>cited answer with confidence</span>
+          <div class="live" data-detail></div>
         </div>
       </div>
     </div>
 
-    <!-- Stack -->
-    <div class="info-section">
-      <div class="info-label">Stack</div>
-      <div class="stack-list">
-        <div class="stack-row"><span class="stack-key">LLM</span><span class="stack-val">qwen3:8b</span></div>
-        <div class="stack-row"><span class="stack-key">Embeddings</span><span class="stack-val">nomic-embed</span></div>
-        <div class="stack-row"><span class="stack-key">Vector DB</span><span class="stack-val">Qdrant</span></div>
-        <div class="stack-row"><span class="stack-key">Graph</span><span class="stack-val">NetworkX</span></div>
-        <div class="stack-row"><span class="stack-key">Agents</span><span class="stack-val">LangGraph</span></div>
-        <div class="stack-row"><span class="stack-key">Reranker</span><span class="stack-val">FlashRank</span></div>
-        <div class="stack-row"><span class="stack-key">Data</span><span class="stack-val">Indian Kanoon</span></div>
-        <div class="stack-row"><span class="stack-key">API</span><span class="stack-val">FastAPI</span></div>
-      </div>
+    <div class="panel">
+      <h4>Stack</h4>
+      <div class="stack-row"><span class="k">llm</span><span class="v">qwen3:8b</span></div>
+      <div class="stack-row"><span class="k">embeddings</span><span class="v">nomic-embed</span></div>
+      <div class="stack-row"><span class="k">vector db</span><span class="v">qdrant</span></div>
+      <div class="stack-row"><span class="k">sparse</span><span class="v">bm25</span></div>
+      <div class="stack-row"><span class="k">graph</span><span class="v">networkx</span></div>
+      <div class="stack-row"><span class="k">agents</span><span class="v">langgraph</span></div>
+      <div class="stack-row"><span class="k">rerank</span><span class="v">flashrank</span></div>
+      <div class="stack-row"><span class="k">api</span><span class="v">fastapi</span></div>
     </div>
+  </aside>
 
-  </div>
-
-  <!-- Chat -->
-  <div class="chat-area">
+  <section class="chat">
     <div class="messages" id="messages">
-      <div class="empty-chat" id="empty-chat">
-        <div class="big">Ask anything</div>
-        <div class="small">Query across 27 Supreme Court judgments and the Constitution of India. Try asking about fundamental rights, landmark cases, or constitutional doctrines.</div>
+      <div class="empty" id="empty">
+        <div class="scene">
+          <div class="octa">
+            <div class="face top"></div>
+            <div class="face right"></div>
+            <div class="face back"></div>
+            <div class="face left"></div>
+            <div class="face btop"></div>
+            <div class="face bright"></div>
+            <div class="face bback"></div>
+            <div class="face bleft"></div>
+          </div>
+        </div>
+        <div>
+          <h1>Ask <em>anything</em></h1>
+          <p>Hybrid retrieval over Indian Supreme Court judgments and the Constitution of India. Try a landmark case, a constitutional article, or a doctrine.</p>
+        </div>
+        <div class="chips-row">
+          <button class="suggest" data-q="What did the Supreme Court say about Article 21 in Maneka Gandhi?">Article 21 in Maneka Gandhi</button>
+          <button class="suggest" data-q="What is the basic structure doctrine and which case established it?">Basic structure doctrine</button>
+          <button class="suggest" data-q="Which judgments expanded the interpretation of personal liberty?">Personal liberty cases</button>
+          <button class="suggest" data-q="How does Kesavananda Bharati relate to Minerva Mills?">Kesavananda → Minerva Mills</button>
+        </div>
       </div>
     </div>
 
-    <div class="input-area">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-        <button onclick="clearConversation()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;">clear conversation</button>
+    <div class="composer">
+      <div class="composer-toolbar">
+        <div></div>
+        <button class="ghost-btn" onclick="clearConversation()">clear conversation</button>
       </div>
-      <div class="input-wrap">
+      <div class="input-shell">
         <textarea
           id="input"
-          placeholder="Ask about Indian law, constitutional rights, or landmark judgments..."
+          placeholder="Ask about Indian law, constitutional rights, or landmark judgments…"
           rows="1"
           onkeydown="handleKey(event)"
           oninput="autoResize(this)"
         ></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        <button class="send" id="send-btn" onclick="sendMessage()" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"></path>
           </svg>
         </button>
       </div>
     </div>
-  </div>
-</main>
+  </section>
+</div>
 
 <script>
 const API = "http://localhost:8000";
-let isLoading = false;
 const SESSION_ID = Math.random().toString(36).slice(2);
+let isLoading = false;
 
+/* ─────────────────────────────────────────────
+   Helpers
+   ──────────────────────────────────────────── */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+function fmt(n) {
+  if (n === undefined || n === null) return "—";
+  return Number(n).toLocaleString();
+}
 
 async function checkHealth() {
   try {
     const res = await fetch(`${API}/health`);
     const data = await res.json();
     const ready = data.status === "ready";
-    document.getElementById("status-dot").className = `status-dot ${ready ? "green" : "amber"}`;
-    document.getElementById("status-text").textContent = ready ? "Ready" : "Loading...";
-    document.getElementById("header-docs").textContent = data.documents;
-    document.getElementById("header-vectors").textContent = data.vectors;
-    document.getElementById("header-nodes").textContent = data.graph_nodes;
-    document.getElementById("stat-docs").textContent = data.documents;
-    document.getElementById("stat-vectors").textContent = data.vectors;
-    document.getElementById("stat-nodes").textContent = data.graph_nodes;
-    document.getElementById("stat-edges").textContent = data.graph_edges;
+    const dot = $("#dot");
+    dot.className = "dot " + (ready ? "ready" : "loading");
+    $("#status-text").textContent = ready ? "Online" : "Loading model";
+    $("#h-docs").textContent = fmt(data.documents);
+    $("#h-vectors").textContent = fmt(data.vectors);
+    $("#h-nodes").textContent = fmt(data.graph_nodes);
+    $("#t-docs").textContent = fmt(data.documents);
+    $("#t-vectors").textContent = fmt(data.vectors);
+    $("#t-bm25").textContent = fmt(data.bm25_chunks);
+    $("#t-nodes").textContent = fmt(data.graph_nodes);
     if (!ready) setTimeout(checkHealth, 2000);
   } catch {
-    document.getElementById("status-dot").className = "status-dot";
-    document.getElementById("status-text").textContent = "Offline";
+    $("#dot").className = "dot";
+    $("#status-text").textContent = "Offline";
     setTimeout(checkHealth, 3000);
   }
 }
 
 function autoResize(el) {
   el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  el.style.height = Math.min(el.scrollHeight, 140) + "px";
 }
 
 function handleKey(e) {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function addMessage(role, content, meta = null) {
-  const empty = document.getElementById("empty-chat");
-  if (empty) empty.remove();
-  const container = document.getElementById("messages");
-  const msg = document.createElement("div");
-  msg.className = `message ${role}`;
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.textContent = content;
-  msg.appendChild(bubble);
-  if (meta) {
-    const metaDiv = document.createElement("div");
-    metaDiv.className = "meta";
-    if (meta.confidence !== undefined) {
-      const c = document.createElement("div");
-      c.className = "chip confidence";
-      c.textContent = `confidence: ${(meta.confidence * 100).toFixed(0)}%`;
-      metaDiv.appendChild(c);
-    }
-    if (meta.strategy) {
-      const s = document.createElement("div");
-      s.className = "chip strategy";
-      s.textContent = `strategy: ${meta.strategy}`;
-      metaDiv.appendChild(s);
-    }
-    if (meta.sources) {
-      meta.sources.slice(0, 2).forEach(src => {
-        const d = document.createElement("div");
-        d.className = "chip";
-        d.textContent = src.length > 45 ? src.slice(0, 45) + "…" : src;
-        metaDiv.appendChild(d);
-      });
-    }
-    msg.appendChild(metaDiv);
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
   }
-  container.appendChild(msg);
-  container.scrollTop = container.scrollHeight;
 }
 
-function addThinking() {
-  const empty = document.getElementById("empty-chat");
-  if (empty) empty.remove();
-  const container = document.getElementById("messages");
-  const msg = document.createElement("div");
-  msg.className = "message assistant";
-  msg.id = "thinking";
-  const stages = ["Identifying legal entities...", "Searching judgments...", "Traversing case graph...", "Synthesizing answer..."];
-  let i = 0;
-  msg.innerHTML = `<div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span class="thinking-stage" id="tstage">${stages[0]}</span></div>`;
-  container.appendChild(msg);
-  container.scrollTop = container.scrollHeight;
-  const iv = setInterval(() => {
-    i = (i + 1) % stages.length;
-    const el = document.getElementById("tstage");
-    if (el) el.textContent = stages[i];
-  }, 1800);
-  return { el: msg, clear: () => clearInterval(iv) };
+/* Suggestion chips */
+$$(".suggest").forEach(b => b.addEventListener("click", () => {
+  $("#input").value = b.dataset.q;
+  autoResize($("#input"));
+  sendMessage();
+}));
+
+/* ─────────────────────────────────────────────
+   Pipeline indicator (sidebar)
+   ──────────────────────────────────────────── */
+const STAGE_ORDER = ["orchestrate", "retrieve", "critique", "generate"];
+
+function resetPipeline() {
+  $$(".pipe-step").forEach(el => {
+    el.classList.remove("active", "done");
+    const live = el.querySelector("[data-detail]");
+    if (live) live.textContent = "";
+  });
 }
 
+function setPipeline(stage, status, detail) {
+  // status: "active" | "done"
+  const i = STAGE_ORDER.indexOf(stage);
+  if (i < 0) return;
+  STAGE_ORDER.forEach((s, idx) => {
+    const el = $(`.pipe-step[data-stage="${s}"]`);
+    if (!el) return;
+    el.classList.remove("active", "done");
+    if (idx < i) el.classList.add("done");
+    else if (idx === i) el.classList.add(status);
+  });
+  if (detail !== undefined) {
+    const liveEl = $(`.pipe-step[data-stage="${stage}"] [data-detail]`);
+    if (liveEl) liveEl.textContent = detail;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Progress card (inline above streaming bubble)
+   ──────────────────────────────────────────── */
+function buildProgressCard() {
+  const card = document.createElement("div");
+  card.className = "progress-card";
+  card.innerHTML = `
+    <div class="pc-head">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span>Working</span>
+      <span class="stage" data-stage>orchestrating</span>
+    </div>
+    <div class="pc-track">
+      <div class="seg" data-seg="orchestrate"><div class="fill"></div></div>
+      <div class="seg" data-seg="retrieve"><div class="fill"></div></div>
+      <div class="seg" data-seg="critique"><div class="fill"></div></div>
+      <div class="seg" data-seg="generate"><div class="fill"></div></div>
+    </div>
+    <div class="pc-detail" data-detail></div>
+  `;
+  return card;
+}
+
+function setSeg(card, stage, status) {
+  const i = STAGE_ORDER.indexOf(stage);
+  STAGE_ORDER.forEach((s, idx) => {
+    const seg = card.querySelector(`[data-seg="${s}"]`);
+    if (!seg) return;
+    seg.classList.remove("active", "done");
+    if (idx < i) seg.classList.add("done");
+    else if (idx === i) seg.classList.add(status);
+  });
+}
+
+function setStageLabel(card, label) {
+  const el = card.querySelector("[data-stage]");
+  if (el) el.textContent = label;
+}
+
+function setDetailTags(card, tags) {
+  const wrap = card.querySelector("[data-detail]");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  tags.forEach(t => {
+    const el = document.createElement("span");
+    el.className = "tag" + (t.cls ? " " + t.cls : "");
+    el.textContent = t.text;
+    wrap.appendChild(el);
+  });
+}
+
+/* ─────────────────────────────────────────────
+   Messages
+   ──────────────────────────────────────────── */
+function removeEmpty() {
+  const e = $("#empty");
+  if (e) e.remove();
+}
+
+function addUserMessage(text) {
+  removeEmpty();
+  const c = $("#messages");
+  const m = document.createElement("div");
+  m.className = "msg user";
+  m.innerHTML = `<div class="bubble"></div>`;
+  m.querySelector(".bubble").textContent = text;
+  c.appendChild(m);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addErrorBubble(message) {
+  const c = $("#messages");
+  const m = document.createElement("div");
+  m.className = "error-card";
+  m.textContent = message;
+  c.appendChild(m);
+  c.scrollTop = c.scrollHeight;
+}
+
+function buildAssistantBubble() {
+  removeEmpty();
+  const c = $("#messages");
+  const wrap = document.createElement("div");
+  wrap.className = "msg assistant";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble streaming";
+  wrap.appendChild(bubble);
+  c.appendChild(wrap);
+  c.scrollTop = c.scrollHeight;
+  return { wrap, bubble };
+}
+
+function attachMeta(wrap, data) {
+  const meta = document.createElement("div");
+  meta.className = "meta";
+
+  if (data.confidence !== undefined && data.confidence !== null) {
+    const c = document.createElement("div");
+    c.className = "chip confidence";
+    const pct = (data.confidence * 100).toFixed(0);
+    c.textContent = `confidence ${pct}%`;
+    if (data.confidence_breakdown) {
+      const b = data.confidence_breakdown;
+      c.title =
+        `top: ${(b.top ?? 0).toFixed(2)}\n` +
+        `gap: ${(b.gap ?? 0).toFixed(2)}\n` +
+        `entity grounding: ${(b.entity ?? 0).toFixed(2)}`;
+    }
+    meta.appendChild(c);
+  }
+  if (data.grounding_stats && data.grounding_stats.sentences) {
+    const g = document.createElement("div");
+    const rate = data.grounding_stats.grounded_rate ?? 0;
+    const cls = rate >= 0.66 ? "confidence" : rate >= 0.33 ? "strategy" : "retry";
+    g.className = `chip ${cls}`;
+    g.textContent = `grounded ${(rate * 100).toFixed(0)}% · ${data.grounding_stats.sentences} sents`;
+    g.title = `${(data.grounding_stats.grounded_rate * 100).toFixed(0)}% of sentences cite at least one retrieved chunk`;
+    meta.appendChild(g);
+  }
+  if (data.strategy) {
+    const s = document.createElement("div");
+    s.className = "chip strategy";
+    s.textContent = `strategy · ${data.strategy}`;
+    meta.appendChild(s);
+  }
+  if (data.retry_count) {
+    const r = document.createElement("div");
+    r.className = "chip retry";
+    r.textContent = `retries · ${data.retry_count}`;
+    meta.appendChild(r);
+  }
+  if (Array.isArray(data.sources)) {
+    data.sources.slice(0, 3).forEach(src => {
+      const d = document.createElement("div");
+      d.className = "chip";
+      d.textContent = src.length > 50 ? src.slice(0, 50) + "…" : src;
+      meta.appendChild(d);
+    });
+  }
+
+  wrap.appendChild(meta);
+}
+
+/* ─────────────────────────────────────────────
+   SSE handler
+   ──────────────────────────────────────────── */
 async function sendMessage() {
-    if (isLoading) return;
-    const input = document.getElementById("input");
-    const question = input.value.trim();
-    if (!question) return;
+  if (isLoading) return;
+  const input = $("#input");
+  const question = input.value.trim();
+  if (!question) return;
 
-    isLoading = true;
-    input.value = "";
-    input.style.height = "auto";
-    document.getElementById("send-btn").disabled = true;
+  isLoading = true;
+  input.value = "";
+  input.style.height = "auto";
+  $("#send-btn").disabled = true;
 
-    addMessage("user", question);
-    const thinking = addThinking();
+  addUserMessage(question);
+  resetPipeline();
 
-    try {
-        const res = await fetch(`${API}/query`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                question,
-                session_id: SESSION_ID,
-                stream: true,
-            }),
-        });
+  // Add a progress card *before* the streaming bubble appears
+  const c = $("#messages");
+  const card = buildProgressCard();
+  c.appendChild(card);
+  c.scrollTop = c.scrollHeight;
+  setSeg(card, "orchestrate", "active");
 
-        thinking.clear();
-        thinking.el.remove();
+  let bubbleEl = null;
+  let wrapEl = null;
+  let firstToken = true;
 
-        if (!res.ok) {
-            const err = await res.json();
-            const msg = document.createElement("div");
-            msg.className = "message assistant";
-            msg.innerHTML = `<div class="error-msg">${err.detail || "Something went wrong"}</div>`;
-            document.getElementById("messages").appendChild(msg);
-            return;
-        }
+  try {
+    const res = await fetch(`${API}/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        session_id: SESSION_ID,
+        stream: true,
+      }),
+    });
 
-        // Create streaming bubble
-        const empty = document.getElementById("empty-chat");
-        if (empty) empty.remove();
-        const container = document.getElementById("messages");
-        const msgEl = document.createElement("div");
-        msgEl.className = "message assistant";
-        const bubble = document.createElement("div");
-        bubble.className = "bubble";
-        bubble.textContent = "";
-        msgEl.appendChild(bubble);
-        container.appendChild(msgEl);
-
-        // Read stream
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let metaDiv = null;
-        let fullAnswer = "";
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const text = decoder.decode(value);
-            const lines = text.split("\n");
-
-            for (const line of lines) {
-                if (!line.startsWith("data: ")) continue;
-                try {
-                    const data = JSON.parse(line.slice(6));
-                    if (data.done) {
-                        // Render metadata chips
-                        metaDiv = document.createElement("div");
-                        metaDiv.className = "meta";
-
-                        if (data.confidence !== undefined) {
-                            const c = document.createElement("div");
-                            c.className = "chip confidence";
-                            c.textContent = `confidence: ${(data.confidence * 100).toFixed(0)}%`;
-                            metaDiv.appendChild(c);
-                        }
-                        if (data.strategy) {
-                            const s = document.createElement("div");
-                            s.className = "chip strategy";
-                            s.textContent = `strategy: ${data.strategy}`;
-                            metaDiv.appendChild(s);
-                        }
-                        if (data.sources) {
-                            data.sources.slice(0, 2).forEach(src => {
-                                const d = document.createElement("div");
-                                d.className = "chip";
-                                d.textContent = src.length > 45 ? src.slice(0, 45) + "…" : src;
-                                metaDiv.appendChild(d);
-                            });
-                        }
-                        msgEl.appendChild(metaDiv);
-                    } else {
-                        bubble.textContent += data.word;
-                        fullAnswer += data.word;
-                        container.scrollTop = container.scrollHeight;
-                    }
-                } catch {}
-            }
-        }
-
-    } catch(e) {
-        thinking.clear();
-        thinking.el.remove();
-        const msg = document.createElement("div");
-        msg.className = "message assistant";
-        msg.innerHTML = `<div class="error-msg">Could not reach API at ${API}. Is it running?</div>`;
-        document.getElementById("messages").appendChild(msg);
-    } finally {
-        isLoading = false;
-        document.getElementById("send-btn").disabled = false;
-        input.focus();
+    if (!res.ok) {
+      card.remove();
+      let detail = "Something went wrong";
+      try { detail = (await res.json()).detail || detail; } catch {}
+      addErrorBubble(detail);
+      return;
     }
 
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop(); // last partial
+
+      for (const block of events) {
+        const line = block.split("\n").find(l => l.startsWith("data: "));
+        if (!line) continue;
+        let data;
+        try { data = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (data.error) {
+          card.remove();
+          addErrorBubble(data.error);
+          continue;
+        }
+
+        // ── Status events ───────────────────────────────
+        if (data.type === "status") {
+          handleStatus(data, card);
+          continue;
+        }
+
+        // ── Final payload ───────────────────────────────
+        if (data.done === true) {
+          if (bubbleEl) bubbleEl.classList.remove("streaming");
+          // Mark all stages done, then collapse the card.
+          setSeg(card, "generate", "done");
+          STAGE_ORDER.forEach(s => {
+            const seg = card.querySelector(`[data-seg="${s}"]`);
+            if (seg) { seg.classList.remove("active"); seg.classList.add("done"); }
+          });
+          setPipeline("generate", "done");
+          setTimeout(() => card.classList.add("hide"), 350);
+          setTimeout(() => card.remove(), 800);
+
+          if (wrapEl) attachMeta(wrapEl, data);
+          continue;
+        }
+
+        // ── Token deltas ────────────────────────────────
+        if (data.word !== undefined) {
+          if (firstToken) {
+            firstToken = false;
+            const built = buildAssistantBubble();
+            wrapEl = built.wrap;
+            bubbleEl = built.bubble;
+          }
+          bubbleEl.textContent += data.word;
+          c.scrollTop = c.scrollHeight;
+        }
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    if (card.parentElement) card.remove();
+    addErrorBubble(`Could not reach API at ${API}. Is it running?`);
+  } finally {
+    isLoading = false;
+    $("#send-btn").disabled = false;
+    input.focus();
+  }
 }
+
+function handleStatus(data, card) {
+  const stage = data.stage;
+
+  /* Map sub-stages onto the 4 main stages */
+  const baseStage =
+    stage.startsWith("orchestrate") ? "orchestrate" :
+    stage.startsWith("retrieve")    ? "retrieve" :    // covers retrieve & retrieve_more
+    stage.startsWith("critique")    ? "critique" :
+    stage === "generate"            ? "generate" :
+    null;
+
+  if (!baseStage) return;
+
+  /* ──── Begin events ──── */
+  if (stage === "orchestrate") {
+    setSeg(card, "orchestrate", "active");
+    setPipeline("orchestrate", "active");
+    setStageLabel(card, "analyzing query");
+    setDetailTags(card, [{ text: "extracting entities" }]);
+  }
+  else if (stage === "retrieve" || stage === "retrieve_more") {
+    setSeg(card, "retrieve", "active");
+    setPipeline("retrieve", "active");
+    const strat = data.strategy ? `${data.strategy}` : "hybrid";
+    setStageLabel(card, stage === "retrieve_more" ? "expanding retrieval" : `searching · ${strat}`);
+  }
+  else if (stage === "critique") {
+    setSeg(card, "critique", "active");
+    setPipeline("critique", "active");
+    setStageLabel(card, "evaluating evidence");
+  }
+  else if (stage === "generate") {
+    setSeg(card, "generate", "active");
+    setPipeline("generate", "active");
+    setStageLabel(card, "writing answer");
+  }
+
+  /* ──── Done sub-events with payloads ──── */
+  if (stage === "orchestrate_done") {
+    setPipeline("orchestrate", "done", `→ ${data.strategy} · ${(data.entities||[]).length} entities`);
+    setSeg(card, "orchestrate", "done");
+    const tags = [{ text: `strategy: ${data.strategy}`, cls: "found" }];
+    (data.entities || []).slice(0, 4).forEach(e => tags.push({ text: e, cls: "found" }));
+    setDetailTags(card, tags);
+  }
+  else if (stage === "retrieve_done") {
+    setSeg(card, "retrieve", "done");
+    const sc = data.source_counts || {};
+    setPipeline("retrieve", "done",
+      `bm25:${sc.bm25||0} · dense:${sc.dense||0} · graph:${sc.graph||0} → ${data.final_count||0}`);
+    const tags = [
+      { text: `bm25: ${sc.bm25 ?? 0}`, cls: (sc.bm25 ? "found" : "zero") },
+      { text: `dense: ${sc.dense ?? 0}`, cls: (sc.dense ? "found" : "zero") },
+      { text: `graph: ${sc.graph ?? 0}`, cls: (sc.graph ? "found" : "zero") },
+      { text: `pool ${data.fused_pool_size ?? 0} → top ${data.final_count ?? 0}`, cls: "found" },
+    ];
+    setDetailTags(card, tags);
+  }
+  else if (stage === "critique_done") {
+    setSeg(card, "critique", "done");
+    const ok = data.sufficient;
+    const note = data.skipped_llm ? "heuristic pass" : (ok ? "llm: ok" : "llm: insufficient");
+    setPipeline("critique", "done", note);
+    const tags = [{ text: note, cls: ok ? "found" : "zero" }];
+    if (data.feedback) tags.push({ text: data.feedback.slice(0, 60), cls: "zero" });
+    setDetailTags(card, tags);
+  }
+  else if (stage === "retrieve_more_done") {
+    setSeg(card, "retrieve", "done");
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Conversation
+   ──────────────────────────────────────────── */
 async function clearConversation() {
-    await fetch(`${API}/conversation/${SESSION_ID}`, { method: "DELETE" });
-    const container = document.getElementById("messages");
-    container.innerHTML = `
-        <div class="empty-chat" id="empty-chat">
-            <div class="big">Ask anything</div>
-            <div class="small">Conversation cleared. Query across Supreme Court judgments and the Constitution of India.</div>
-        </div>`;
+  try { await fetch(`${API}/conversation/${SESSION_ID}`, { method: "DELETE" }); } catch {}
+  const c = $("#messages");
+  c.innerHTML = `
+    <div class="empty" id="empty">
+      <div class="scene">
+        <div class="octa">
+          <div class="face top"></div><div class="face right"></div>
+          <div class="face back"></div><div class="face left"></div>
+          <div class="face btop"></div><div class="face bright"></div>
+          <div class="face bback"></div><div class="face bleft"></div>
+        </div>
+      </div>
+      <div>
+        <h1>Cleared. Ask <em>anything</em>.</h1>
+        <p>Hybrid retrieval over Indian Supreme Court judgments and the Constitution of India.</p>
+      </div>
+      <div class="chips-row">
+        <button class="suggest" data-q="What did the Supreme Court say about Article 21 in Maneka Gandhi?">Article 21 in Maneka Gandhi</button>
+        <button class="suggest" data-q="What is the basic structure doctrine and which case established it?">Basic structure doctrine</button>
+        <button class="suggest" data-q="Which judgments expanded the interpretation of personal liberty?">Personal liberty cases</button>
+        <button class="suggest" data-q="How does Kesavananda Bharati relate to Minerva Mills?">Kesavananda → Minerva Mills</button>
+      </div>
+    </div>`;
+  // re-bind suggestion chips
+  $$(".suggest").forEach(b => b.addEventListener("click", () => {
+    $("#input").value = b.dataset.q;
+    autoResize($("#input"));
+    sendMessage();
+  }));
 }
 
 checkHealth();

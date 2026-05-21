@@ -1,18 +1,30 @@
 # Virtual environment
+.venv/
 graphrag/
 venv/
 env/
 .env
 
-# Cache files
+# Cache files (regenerated on first run; not part of source)
 data/arxiv_cache/
 data/qdrant_storage/
 data/kg_cache.pkl
+data/bm25_cache.pkl
+data/logs/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Indian Kanoon raw cache (large, refetchable)
+data/ik_cache/
+
+# Eval results — keep baseline, ignore the timestamped runs
+evaluation/results/eval-*.jsonl
+evaluation/results/summary-*.json
+!evaluation/results/baseline.json
+!evaluation/results/baseline.jsonl
 
 # Jupyter
 .ipynb_checkpoints/
@@ -21,7 +33,6 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
-.env
 
 # IDE
 .vscode/
@@ -42,5 +53,5 @@ dist/
 build/
 *.egg-info/
 
-#helper files
+# Helper files
 check_content.py

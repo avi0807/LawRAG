@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "description": "LawRAG golden set. Each entry has a question, expected entities, expected source titles (substring match), and optional expected_keywords that must appear in the answer.",
+  "cases": [
+    {
+      "id": "art21_maneka",
+      "question": "What did the Supreme Court say about Article 21 in Maneka Gandhi case?",
+      "expected_entities": ["Article 21", "Maneka Gandhi"],
+      "expected_sources": ["Maneka Gandhi", "Article 21"],
+      "expected_keywords": ["personal liberty", "procedure established by law"]
+    },
+    {
+      "id": "fundamental_rights",
+      "question": "What are the fundamental rights guaranteed under the Indian Constitution?",
+      "expected_entities": ["Indian Constitution"],
+      "expected_sources": ["Article 14", "Article 19", "Article 21"],
+      "expected_keywords": ["equality", "freedom", "liberty"]
+    },
+    {
+      "id": "basic_structure",
+      "question": "What is the basic structure doctrine and which case established it?",
+      "expected_entities": ["basic structure"],
+      "expected_sources": ["Kesavananda Bharati"],
+      "expected_keywords": ["Kesavananda", "amend"]
+    },
+    {
+      "id": "kesavananda_minerva",
+      "question": "How does Kesavananda Bharati relate to Minerva Mills?",
+      "expected_entities": ["Kesavananda Bharati", "Minerva Mills"],
+      "expected_sources": ["Kesavananda", "Minerva Mills"],
+      "expected_keywords": ["amend", "basic structure"]
+    },
+    {
+      "id": "preventive_detention",
+      "question": "Which cases discuss preventive detention?",
+      "expected_entities": ["preventive detention"],
+      "expected_sources": ["Gopalan"],
+      "expected_keywords": ["detention"]
+    },
+    {
+      "id": "personal_liberty_expansion",
+      "question": "Which judgments expanded the interpretation of personal liberty?",
+      "expected_entities": ["personal liberty"],
+      "expected_sources": ["Maneka Gandhi"],
+      "expected_keywords": ["liberty"]
+    },
+    {
+      "id": "art14_equality",
+      "question": "What does Article 14 guarantee?",
+      "expected_entities": ["Article 14"],
+      "expected_sources": ["Article 14"],
+      "expected_keywords": ["equality"]
+    },
+    {
+      "id": "art19_freedoms",
+      "question": "What freedoms are protected under Article 19?",
+      "expected_entities": ["Article 19"],
+      "expected_sources": ["Article 19"],
+      "expected_keywords": ["speech", "assembly"]
+    },
+    {
+      "id": "olga_tellis",
+      "question": "What did the court hold in Olga Tellis about right to livelihood?",
+      "expected_entities": ["Olga Tellis"],
+      "expected_sources": ["Olga Tellis"],
+      "expected_keywords": ["livelihood", "Article 21"]
+    },
+    {
+      "id": "bachan_singh",
+      "question": "What is the rarest of rare doctrine and which case established it?",
+      "expected_entities": ["Bachan Singh"],
+      "expected_sources": ["Bachan Singh"],
+      "expected_keywords": ["rarest", "death penalty"]
+    },
+    {
+      "id": "out_of_scope_negative",
+      "question": "What is the exchange rate between US dollars and Indian rupees?",
+      "expected_entities": [],
+      "expected_sources": [],
+      "expected_keywords": ["does not contain"],
+      "is_negative": true
+    },
+    {
+      "id": "twenty_fourth_amendment",
+      "question": "What did the Twenty-Fourth Amendment do?",
+      "expected_entities": ["Twenty-Fourth Amendment"],
+      "expected_sources": ["TWENTY-FOURTH AMENDMENT"],
+      "expected_keywords": ["amend"]
+    }
+  ]
+}
